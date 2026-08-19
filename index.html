@@ -1,0 +1,3099 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Аналитика продавца — ВсеИнструменты.ру · ГТВ РУС</title>
+<style>
+/* ============================================================
+   ДИЗАЙН-ТОКЕНЫ. Тёмная тема, фирменная пара «графит + оранжевый».
+   ============================================================ */
+:root{
+  --bg:#101216; --bg2:#161920; --panel:#1a1e26; --panel2:#20252f;
+  --line:#2a3038; --line2:#363d48;
+  --tx:#e8ecf2; --tx2:#98a2b3; --tx3:#6b7484;
+  --acc:#ff7a18; --acc2:#ffa04d; --accdim:rgba(255,122,24,.14);
+  --ok:#3ecf8e; --warn:#ffb020; --bad:#ff5f56; --info:#5aa9ff;
+  --okdim:rgba(62,207,142,.14); --warndim:rgba(255,176,32,.14); --baddim:rgba(255,95,86,.14);
+  --r:10px; --r2:14px;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+a{color:var(--acc2)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.pos{color:var(--ok)} .neg{color:var(--bad)} .mut{color:var(--tx2)} .mut3{color:var(--tx3)}
+.small{font-size:12px} .xs{font-size:11px}
+.hidden{display:none!important}
+
+/* ---------- Шапка ---------- */
+header{position:sticky;top:0;z-index:40;background:linear-gradient(180deg,#12151b 0%,#12151bf2 100%);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.hrow{display:flex;align-items:center;gap:14px;padding:12px 20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.brand .mark{width:26px;height:26px;border-radius:7px;background:var(--acc);display:grid;place-items:center;
+  color:#12151b;font-weight:800;font-size:13px}
+.brand small{display:block;font-weight:500;color:var(--tx3);font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+.spacer{flex:1}
+.btn{background:var(--panel2);border:1px solid var(--line2);border-radius:8px;padding:7px 13px;cursor:pointer;
+  transition:.13s;white-space:nowrap;font-size:13px}
+.btn:hover{border-color:var(--acc);color:var(--acc2)}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#12151b;font-weight:650}
+.btn.primary:hover{background:var(--acc2);border-color:var(--acc2);color:#12151b}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+select.sel{background:var(--panel2);border:1px solid var(--line2);border-radius:8px;padding:7px 10px;cursor:pointer}
+input.inp{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:7px 10px;width:100%}
+input.inp:focus{outline:none;border-color:var(--acc)}
+input[type=number]{font-family:var(--mono)}
+
+/* ---------- KPI ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:1px;background:var(--line);
+  border-top:1px solid var(--line)}
+.kpi{background:var(--bg2);padding:11px 16px 12px;min-width:0}
+.kpi .lab{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--tx3);margin-bottom:3px}
+.kpi .val{font-family:var(--mono);font-size:20px;font-weight:600;letter-spacing:-.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .sub{font-size:11.5px;color:var(--tx2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{display:inline-block;padding:1px 6px;border-radius:5px;font-size:10.5px;font-weight:600;vertical-align:1px}
+.tag.ok{background:var(--okdim);color:var(--ok)} .tag.bad{background:var(--baddim);color:var(--bad)}
+.tag.warn{background:var(--warndim);color:var(--warn)} .tag.acc{background:var(--accdim);color:var(--acc2)}
+.tag.n{background:var(--panel2);color:var(--tx2)}
+
+/* ---------- Вкладки ---------- */
+nav.tabs{display:flex;gap:2px;padding:0 14px;background:var(--bg2);border-bottom:1px solid var(--line);
+  overflow-x:auto;scrollbar-width:thin}
+nav.tabs button{background:none;border:none;border-bottom:2px solid transparent;padding:11px 14px;cursor:pointer;
+  color:var(--tx2);font-weight:550;white-space:nowrap}
+nav.tabs button:hover{color:var(--tx)}
+nav.tabs button.on{color:var(--acc2);border-bottom-color:var(--acc)}
+nav.tabs .cnt{background:var(--panel2);border-radius:20px;padding:0 6px;font-size:10.5px;margin-left:6px;color:var(--tx2)}
+
+main{padding:18px 20px 60px;max-width:1580px;margin:0 auto}
+section.tab{display:none} section.tab.on{display:block}
+
+/* ---------- Карточки ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r2);padding:16px 18px;margin-bottom:14px}
+.card>h3{margin:0 0 3px;font-size:14.5px;letter-spacing:-.01em}
+.card>h3+.hint{margin:0 0 13px}
+.hint{color:var(--tx3);font-size:12px;margin:0 0 10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:1050px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* ---------- Инсайты ---------- */
+.ins{display:flex;gap:11px;padding:11px 13px;border-radius:var(--r);background:var(--bg2);
+  border-left:3px solid var(--line2);margin-bottom:8px}
+.ins .ic{font-size:15px;line-height:1.2;width:18px;flex:none;text-align:center}
+.ins.bad{border-left-color:var(--bad)} .ins.ok{border-left-color:var(--ok)}
+.ins.warn{border-left-color:var(--warn)} .ins.info{border-left-color:var(--info)}
+.ins b{font-family:var(--mono);font-weight:600}
+
+/* ---------- Таблицы ---------- */
+.tw{overflow:auto;max-height:640px;border:1px solid var(--line);border-radius:var(--r)}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px}
+th{position:sticky;top:0;z-index:2;background:var(--panel2);text-align:right;padding:8px 9px;white-space:nowrap;
+  font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx2);
+  border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
+th:first-child,td:first-child{text-align:left}
+th.nos{cursor:default}
+th:hover:not(.nos){color:var(--acc2)}
+th .ar{color:var(--acc);margin-left:3px}
+td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr:hover td{background:var(--bg2)}
+tr.grp td{background:var(--panel2);font-weight:600}
+tr.exp td{background:var(--bg2)}
+td.nm{max-width:400px;white-space:normal;line-height:1.35}
+td.clk{cursor:pointer}
+td.clk:hover{color:var(--acc2)}
+.art{font-family:var(--mono);font-size:11.5px;color:var(--acc2)}
+tfoot td{position:sticky;bottom:0;background:var(--panel2);font-weight:650;border-top:1px solid var(--line2)}
+
+/* ---------- Полосы прогресса ---------- */
+.bar{height:9px;background:var(--bg);border-radius:5px;overflow:hidden;position:relative;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:5px}
+.bar .pace{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--tx);border-radius:2px}
+.pf{margin-bottom:16px}
+.pf .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;gap:10px}
+.pf .top b{font-size:13px} .pf .top span{font-family:var(--mono);font-size:12.5px}
+
+/* ---------- Прочее ---------- */
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px}
+.chip{background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:3px 11px;font-size:11.5px;cursor:pointer}
+.chip.on{background:var(--accdim);border-color:var(--acc);color:var(--acc2)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:11px}
+.tools input.inp{width:auto;min-width:210px}
+.drop{border:1.5px dashed var(--line2);border-radius:var(--r2);padding:26px;text-align:center;color:var(--tx2);
+  cursor:pointer;transition:.15s;background:var(--bg2)}
+.drop:hover,.drop.over{border-color:var(--acc);color:var(--acc2);background:var(--accdim)}
+.files{display:flex;flex-direction:column;gap:6px}
+.frow{display:flex;align-items:center;gap:10px;padding:8px 11px;background:var(--bg2);border-radius:var(--r);
+  border:1px solid var(--line);font-size:12.5px}
+.frow .x{cursor:pointer;color:var(--tx3);padding:0 4px}
+.frow .x:hover{color:var(--bad)}
+.ci{display:flex;gap:8px;align-items:center;margin-bottom:9px;cursor:pointer}
+.ci input{accent-color:var(--acc);width:15px;height:15px;cursor:pointer}
+.costin{width:96px;background:var(--bg);border:1px solid var(--line2);border-radius:6px;padding:3px 6px;
+  text-align:right;font-family:var(--mono);font-size:12px}
+.costin:focus{outline:none;border-color:var(--acc)}
+.costin.man{border-color:var(--warn)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--tx2);margin-top:8px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:0}
+
+/* ---------- Модалка / тосты ---------- */
+.ovl{position:fixed;inset:0;background:#0009;backdrop-filter:blur(3px);z-index:90;display:grid;place-items:center;padding:20px}
+.modal{background:var(--panel);border:1px solid var(--line2);border-radius:var(--r2);padding:22px;max-width:600px;width:100%;
+  max-height:85vh;overflow:auto}
+.modal h3{margin:0 0 8px}
+.toasts{position:fixed;right:16px;bottom:16px;z-index:100;display:flex;flex-direction:column;gap:8px;max-width:430px}
+.toast{background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--info);border-radius:var(--r);
+  padding:11px 14px;font-size:12.5px;box-shadow:0 8px 26px #0007;animation:sl .22s ease}
+.toast.err{border-left-color:var(--bad)} .toast.ok{border-left-color:var(--ok)} .toast.warn{border-left-color:var(--warn)}
+@keyframes sl{from{opacity:0;transform:translateX(18px)}}
+.empty{padding:34px 20px;text-align:center;color:var(--tx3);background:var(--bg2);border-radius:var(--r);
+  border:1px dashed var(--line2)}
+svg text{font-family:var(--mono);font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <div class="brand"><span class="mark">ГТ</span>
+      <span>Аналитика продаж<small>ВсеИнструменты.ру · ГТВ РУС</small></span></div>
+    <div class="spacer"></div>
+    <select class="sel" id="periodSel" title="Период отображения"></select>
+    <button class="btn" id="btnSnap" title="Зафиксировать текущие показатели периода в истории">Сохранить срез</button>
+    <button class="btn" id="btnState" title="Перенести данные в другой браузер или на другой компьютер">
+      Состояние <span class="tag n" id="syncBadge">локально</span></button>
+    <button class="btn" id="btnClear" title="Удалить загруженные данные">Очистить</button>
+    <input type="file" id="stateIn" accept=".json" style="display:none">
+    <button class="btn primary" id="btnUp">Загрузить отчёты</button>
+    <input type="file" id="fileIn" multiple accept=".xlsx,.xls,.xlsm" style="display:none">
+  </div>
+  <div class="kpis" id="kpis"></div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-t="ov" class="on">Обзор</button>
+  <button data-t="pf">План-факт</button>
+  <button data-t="ue">Юнит-экономика</button>
+  <button data-t="pr">Товары</button>
+  <button data-t="ad">Реклама / Воронка</button>
+  <button data-t="st">Остатки</button>
+  <button data-t="mx">Матрица ВИ</button>
+  <button data-t="dt">Данные и настройки</button>
+</nav>
+
+<div id="storageWarn"></div>
+
+<main>
+  <section class="tab on" id="tab-ov"></section>
+  <section class="tab" id="tab-pf"></section>
+  <section class="tab" id="tab-ue"></section>
+  <section class="tab" id="tab-pr"></section>
+  <section class="tab" id="tab-ad"></section>
+  <section class="tab" id="tab-st"></section>
+  <section class="tab" id="tab-mx"></section>
+  <section class="tab" id="tab-dt"></section>
+</main>
+
+<div class="toasts" id="toasts"></div>
+<div id="modalHost"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ================================================================================
+   БЛОК 1. УТИЛИТЫ, СОСТОЯНИЕ, СОХРАНЕНИЕ
+   ================================================================================ */
+"use strict";
+
+const LS = {
+  data:"vidash_v1_data", cost:"vidash_v1_cost", plan:"vidash_v1_plan",
+  cfg:"vidash_v1_cfg", snap:"vidash_v1_snap", ui:"vidash_v1_ui"
+};
+
+/* Настройки по умолчанию. Пороги остатков и правила учёта — редактируются на вкладке «Данные». */
+const DEF_CFG = {
+  critDays:7, warnDays:14, vatCost:true, vat:1.22,
+  skipMktBonus:true,          // маркетинговый бонус 8% не вычитаем вторым разом: он и есть источник маркетингового плана
+  rrcK:null,                  // коэффициент РРЦ / закупочная цена; null = считать из PRICAT автоматически
+  adBase:"rev",               // база разнесения рекламы на товары: rev — по выручке, qty — по штукам
+  matrixActive:null,          // id набора матрицы, который используется как актуальный
+  taxRate:0,                  // ставка налога на прибыль, % (0 = не учитывать)
+  drrLo:7, drrHi:15,          // ориентир ДРР из брифа
+  costSrcPrio:["report","costfile","pricat","manual"]
+};
+
+const S = {
+  periods:{},      // ключ "2026-01" -> {key,label,from,to,files:[],items:{art:{...}}}
+  files:[],        // {id,name,type,period,rows,ts}
+  costFile:{},     // art -> {v, name, unit}   («Себестоимость.xlsx», с НДС)
+  pricat:{},       // art -> {name,brand,stock,viPrice,retail,barcode}
+                   // viPrice = «Закупочная цена» из PRICAT: это НАША расчётная цена продажи для ВИ,
+                   // а не себестоимость. В расчёте себестоимости не участвует ни при каких условиях.
+  matrix:{},       // art -> {cls,name} — активный набор матрицы
+  matrixSets:{},   // id -> {id,label,quarter,map,source} — наборы матрицы по кварталам
+  planFile:null,   // годовой план: {year, rev[12], marg[12]}
+  mkt:null,        // маркетинговый план
+  bonus:{},        // "2026-Q1" -> {rows:[],total,year,q}
+  viSell:null,     // sell-out ВИ конечным покупателям
+  viStock:[],      // остатки на складах ВИ
+  manualCost:{},   // art -> число, введено вручную
+  plan:{},         // "2026-01" -> {rev,profit,cats:{}}
+  snaps:[],
+  cfg:{...DEF_CFG},
+  cur:null,        // текущий ключ периода ("ALL" = все)
+  ui:{tab:"ov"}
+};
+
+/* ---------- Числа и форматирование ---------- */
+const MONTHS=["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
+const MONTHS_C=["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+
+function n(v){ // безопасный разбор числа из ячейки Excel (в т.ч. "1 234,56")
+  if(v===null||v===undefined||v==="")return null;
+  if(typeof v==="number")return isFinite(v)?v:null;
+  const s=String(v).replace(/\u00a0|\s/g,"").replace(",",".").replace(/[^\d.\-]/g,"");
+  const x=parseFloat(s); return isFinite(x)?x:null;
+}
+const num=v=>{const x=n(v);return x===null?0:x;};
+function f0(v){return v==null||!isFinite(v)?"—":Math.round(v).toLocaleString("ru-RU");}
+function f2(v){return v==null||!isFinite(v)?"—":v.toLocaleString("ru-RU",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function money(v){return v==null||!isFinite(v)?"—":Math.round(v).toLocaleString("ru-RU")+" ₽";}
+function short(v){
+  if(v==null||!isFinite(v))return "—";
+  const a=Math.abs(v),s=v<0?"−":"";
+  if(a>=1e9)return s+(a/1e9).toFixed(2)+" млрд";
+  if(a>=1e6)return s+(a/1e6).toFixed(2)+" млн";
+  if(a>=1e3)return s+(a/1e3).toFixed(0)+" тыс";
+  return s+Math.round(a);
+}
+function pct(v,d){return v==null||!isFinite(v)?"—":(v*100).toFixed(d==null?1:d).replace(".",",")+"%";}
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clean=s=>String(s==null?"":s).replace(/\u00a0/g," ").replace(/\s+/g," ").trim();
+const cls=v=>v>0?"pos":v<0?"neg":"";
+
+/* ---------- Артикулы ---------- */
+/* В выгрузке 1С артикул спрятан в хвосте наименования: обычно последний сегмент после запятой
+   («… 520х390х1003 мм, HT7G500-S1»), но в PRICAT он идёт без запятой («… 160 мм HT1P006»). */
+const RX_ART=/^[A-ZА-Я0-9]{2,4}[-]?[0-9A-ZА-Я][A-ZА-Я0-9\-\/\.]{1,}$/i;
+/* Типы документов 1С. \b тут не годится: \w в JS не включает кириллицу, границы слова не будет. */
+const RX_DOC=/^(Заказ клиента|Реализация|Возврат[а-яё]*|Отч[её]т[а-яё]*|Сч[её]т[а-яё]*|Акт|Перемещение)/i;
+/* Уровни группировки отчёта (менеджер, партнёр, контрагент) тоже приходят с заполненным количеством —
+   на каждом уровне повторяется сумма нижележащих строк. Их нельзя считать товарами: иначе одна продажа
+   учитывается четыре раза. Отличаем по виду подписи, потому что уровень вложенности в xlsx закодирован
+   только отступом ячейки, который SheetJS не отдаёт. */
+const RX_MANAGER=/^[А-ЯЁ][а-яё]+(-[А-ЯЁ][а-яё]+)?\s+[А-ЯЁ]\.$/;      // «Соколова О.»
+const RX_ORG=/(^|\s)(ООО|ЗАО|ПАО|АО|ИП)(\s|$)/i;                     // «ВСЕИНСТРУМЕНТЫ.РУ ООО»
+const RX_SITE=/^[\wА-Яа-яЁё\-\s]+\.(ру|рф|ru)$/i;                    // «ВсеИнструменты.ру»
+const isGroupRow=s=>RX_DOC.test(s)||RX_MANAGER.test(s)||RX_ORG.test(s)||RX_SITE.test(s);
+function extractArt(name){
+  const s=clean(name); if(!s)return null;
+  const parts=s.split(",");
+  const last=clean(parts[parts.length-1]);
+  if(last&&last.length<=24&&RX_ART.test(last)&&/\d/.test(last))return last.toUpperCase();
+  const m=s.match(/([A-Z]{2,3}[0-9][A-Z0-9]{2,}(?:-[A-Z0-9]{1,4})*)\s*$/i);
+  if(m)return m[1].toUpperCase();
+  return null;
+}
+function stripArt(name,art){
+  let s=clean(name);
+  if(art){const i=s.toUpperCase().lastIndexOf(art);if(i>0)s=clean(s.slice(0,i).replace(/[,\s]+$/,""));}
+  return s;
+}
+
+/* Категорий в выгрузках нет ни в одной. Выводим из префикса артикула — в интерфейсе помечено как расчётный признак. */
+const CATMAP={
+  HT5K:"СИЗ и спецодежда", HT1S:"Биты и насадки", HT6D:"Оснастка: диски и свёрла",
+  HT7D:"Оснастка: свёрла и коронки", HT8D:"Абразивы и шлифование", HT3B:"Ударный инструмент",
+  HT1P:"Шарнирно-губцевый инструмент", HT8G:"Автоинструмент", HT4R:"Головки и монтажный инструмент",
+  HT1A:"Торцевые головки", HT1W:"Ключи гаечные", HT1R:"Ключи трещоточные",
+  HT7G:"Ящики, кейсы, тележки", HT2C:"Степлеры и крепёж", HT4M:"Измерительный инструмент",
+  HT1E:"Электрика и освещение", HT4C:"Ножи и лезвия", HT3S:"Пилы и полотна",
+  HT2E:"Электроинструмент", HT2A:"Насадки для реноваторов", HT1F:"Отвёртки",
+  PB:"GTV: ящики и системы", PD:"GTV: газлифты и механизмы", LD:"GTV: освещение",
+  WG:"GTV: гардеробные системы", KK:"GTV: вентиляция", NM:"GTV: опоры и ножки",
+  WW:"GTV: вешалки", PM:"GTV: кабель-менеджмент", AE:"GTV: розетки и удлинители",
+  PG:"GTV: пантографы"
+};
+function catOf(art){
+  if(!art)return "Без артикула";
+  const a=art.toUpperCase();
+  if(CATMAP[a.slice(0,4)])return CATMAP[a.slice(0,4)];
+  if(CATMAP[a.slice(0,2)])return CATMAP[a.slice(0,2)];
+  if(a.startsWith("HT"))return "Прочий инструмент HOEGERT";
+  return "Прочее";
+}
+
+/* ---------- Работа с localStorage ----------
+   Прямая запись JSON.stringify(состояние) занимала около 4,4 МБ и упиралась в лимит браузера
+   (обычно 5 МБ на домен), из-за чего сохранение падало целиком и при следующем открытии
+   дашборд оказывался пустым. Поэтому состояние пакуется: все строки (артикулы, наименования,
+   бренды) выносятся в общий словарь и заменяются числовыми индексами, а строки товаров
+   хранятся массивами без имён полей. Это уменьшает объём примерно втрое. */
+const LS_VER=2;
+
+function packState(){
+  const dict=[],idx=new Map();
+  const S_=v=>{                      // строка -> индекс в словаре
+    if(v==null||v==="")return -1;
+    const s=String(v);let i=idx.get(s);
+    if(i===undefined){i=dict.length;dict.push(s);idx.set(s,i);}
+    return i;};
+  const r2=v=>v==null?null:Math.round(v*100)/100;
+  const periods={};
+  Object.entries(S.periods).forEach(([k,p])=>{
+    periods[k]={l:p.label,f:p.from,t:p.to,d:p.days,dc:p.docs||{},
+      src:(p.sources||[]).map(S_),sk:p.skippedDocRows||0,skr:r2(p.skippedDocRev),
+      rt:p.reportTotal||null,
+      ret:p.ret?{...p.ret,list:(p.ret.list||[]).map(x=>[S_(x.doc),x.qty,r2(x.rev),r2(x.gross)])}:null,
+      it:(p.items||[]).map(t=>[S_(t.art),S_(t.name),t.qty,r2(t.rev),r2(t.cost),r2(t.pur),
+        r2(t.gross),t.retQty||0,r2(t.retRev)||0,t.lines||0])};
+  });
+  return {v:LS_VER,dict,periods,
+    pricat:Object.entries(S.pricat).map(([a,p])=>[S_(a),S_(p.name),S_(p.brand),p.stock,p.viPrice,p.retail,S_(p.barcode)]),
+    costFile:Object.entries(S.costFile).map(([a,c])=>[S_(a),c.v,S_(c.name),S_(c.unit),c.vat?1:0]),
+    matrixSets:Object.values(S.matrixSets||{}).map(st=>({id:st.id,label:st.label,quarter:st.quarter,
+      count:st.count,rows:Object.entries(st.map).map(([a,m])=>[S_(a),S_(m.cls),S_(m.name)])})),
+    viStock:(S.viStock||[]).map(x=>[S_(x.name),S_(x.art),x.qty,r2(x.amount)]),
+    viSell:S.viSell,mkt:S.mkt,bonus:S.bonus,planFile:S.planFile};
+}
+function unpackState(d){
+  if(!d)return;
+  if(d.v!==LS_VER){                  // старый формат — читаем как есть, чтобы ничего не потерять
+    Object.assign(S,{periods:d.periods||{},costFile:d.costFile||{},pricat:d.pricat||{},
+      matrix:d.matrix||{},matrixSets:d.matrixSets||{},planFile:d.planFile||null,
+      mkt:d.mkt||null,bonus:d.bonus||{},viSell:d.viSell||null,viStock:d.viStock||[]});
+    return;
+  }
+  const D=d.dict||[];const G=i=>(i==null||i<0)?"":D[i];
+  const periods={};
+  Object.entries(d.periods||{}).forEach(([k,p])=>{
+    periods[k]={key:k,label:p.l,from:p.f,to:p.t,days:p.d,docs:p.dc||{},
+      sources:(p.src||[]).map(G),skippedDocRows:p.sk,skippedDocRev:p.skr,reportTotal:p.rt,
+      ret:p.ret?{...p.ret,list:(p.ret.list||[]).map(x=>({doc:G(x[0]),qty:x[1],rev:x[2],gross:x[3]}))}:null,
+      items:(p.it||[]).map(t=>({art:G(t[0]),name:G(t[1]),qty:t[2],rev:t[3],cost:t[4],pur:t[5],
+        gross:t[6],retQty:t[7],retRev:t[8],lines:t[9]}))};
+  });
+  S.periods=periods;
+  S.pricat={};(d.pricat||[]).forEach(r=>S.pricat[G(r[0])]={name:G(r[1]),brand:G(r[2]),
+    stock:r[3],viPrice:r[4],retail:r[5],barcode:G(r[6])});
+  S.costFile={};(d.costFile||[]).forEach(r=>S.costFile[G(r[0])]={v:r[1],name:G(r[2]),unit:G(r[3]),vat:!!r[4]});
+  S.matrixSets={};(d.matrixSets||[]).forEach(st=>{
+    const map={};(st.rows||[]).forEach(r=>map[G(r[0])]={cls:G(r[1])||null,name:G(r[2])});
+    S.matrixSets[st.id]={id:st.id,label:st.label,quarter:st.quarter,count:st.count,map};});
+  S.viStock=(d.viStock||[]).map(r=>({name:G(r[0]),art:G(r[1]),qty:r[2],amount:r[3]}));
+  S.viSell=d.viSell||null;S.mkt=d.mkt||null;S.bonus=d.bonus||{};S.planFile=d.planFile||null;
+}
+
+/* Проверяем, разрешено ли браузеру хранить данные. Например, Safari полностью запрещает
+   localStorage для файлов, открытых как file://, а режим инкогнито может его блокировать.
+   Без этой проверки дашборд молча терял бы всё при закрытии вкладки. */
+let STORAGE_OK=true, STORAGE_ERR="";
+try{localStorage.setItem("vidash_probe","1");localStorage.removeItem("vidash_probe");}
+catch(e){STORAGE_OK=false;STORAGE_ERR=e.name||e.message;}
+
+let LAST_SAVE_OK=true;
+function save(){
+  LAST_SAVE_OK=true;
+  try{
+    localStorage.setItem(LS.cost,JSON.stringify(S.manualCost));
+    localStorage.setItem(LS.plan,JSON.stringify(S.plan));
+    localStorage.setItem(LS.cfg,JSON.stringify(S.cfg));
+    localStorage.setItem(LS.snap,JSON.stringify(S.snaps));
+    localStorage.setItem(LS.ui,JSON.stringify({tab:S.ui.tab,cur:S.cur}));
+  }catch(e){
+    LAST_SAVE_OK=false;
+    toast("Браузер не даёт сохранять данные (срезы, планы, настройки): "+esc(e.name||e.message)+
+      ".<br><span class='xs mut'>Если файл открыт как file:// в режиме инкогнито или с запретом на данные сайтов — сохранение работать не будет. "+
+      "Используйте кнопку «Состояние → Выгрузить в файл».</span>","err",14000);
+    return;
+  }
+  stamp();
+  schedulePush();          // если включена синхронизация — отправим последнюю версию в облако
+  try{
+    localStorage.setItem(LS.data,JSON.stringify(packState()));
+  }catch(e){
+    LAST_SAVE_OK=false;
+    toast("Отчёты не поместились в память браузера"+(e.name==="QuotaExceededError"?" (превышен лимит хранилища)":": "+esc(e.message))+
+      ".<br><span class='xs mut'>Срезы, планы и настройки сохранены. Удалите лишние периоды кнопкой «Очистить» "+
+      "или выгрузите состояние в файл, чтобы перенести его.</span>","err",14000);
+  }
+}
+function load(){
+  try{
+    S.manualCost=JSON.parse(localStorage.getItem(LS.cost)||"{}");
+    S.plan=JSON.parse(localStorage.getItem(LS.plan)||"{}");
+    S.cfg={...DEF_CFG,...JSON.parse(localStorage.getItem(LS.cfg)||"{}")};
+    S.snaps=JSON.parse(localStorage.getItem(LS.snap)||"[]");
+    const u=JSON.parse(localStorage.getItem(LS.ui)||"{}"); S.ui.tab=u.tab||"ov"; S.cur=u.cur||null;
+    unpackState(JSON.parse(localStorage.getItem(LS.data)||"null"));
+  }catch(e){console.warn("Восстановление состояния:",e);}
+}
+
+/* Перенос состояния между браузерами и компьютерами. localStorage привязан к конкретному
+   браузеру на конкретной машине, поэтому единственный способ увидеть те же данные в другом
+   браузере — выгрузить файл состояния и загрузить его там. */
+function exportState(){
+  const blob=new Blob([JSON.stringify({
+    kind:"vidash-state",saved:new Date().toISOString(),
+    data:packState(),manualCost:S.manualCost,plan:S.plan,cfg:S.cfg,snaps:S.snaps,cur:S.cur
+  })],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="состояние-дашборда-"+new Date().toISOString().slice(0,10)+".json";
+  a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  toast("Состояние выгружено. Загрузите этот файл в другом браузере кнопкой «Состояние → Загрузить из файла».","ok",8000);
+}
+async function importState(file){
+  try{
+    const j=JSON.parse(await file.text());
+    if(j.kind!=="vidash-state")throw new Error("это не файл состояния дашборда");
+    unpackState(j.data);
+    S.manualCost=j.manualCost||{};S.plan=j.plan||{};
+    S.cfg={...DEF_CFG,...(j.cfg||{})};S.snaps=j.snaps||[];S.cur=j.cur||null;
+    pickActiveMatrix();
+    finishLoad();
+    toast("Состояние загружено: периодов <b>"+Object.keys(S.periods).length+"</b>, срезов <b>"+S.snaps.length+"</b>","ok");
+  }catch(e){toast("Не удалось прочитать файл состояния: "+esc(e.message),"err",9000);}
+}
+
+/* ---------- Тосты и модалки ---------- */
+function toast(msg,kind,ms){
+  const el=document.createElement("div");
+  el.className="toast "+(kind||"");el.innerHTML=msg;
+  document.getElementById("toasts").appendChild(el);
+  setTimeout(()=>{el.style.opacity="0";el.style.transition=".3s";setTimeout(()=>el.remove(),300);},ms||5200);
+}
+function modal(html,onMount){
+  const host=document.getElementById("modalHost");
+  host.innerHTML='<div class="ovl"><div class="modal">'+html+'</div></div>';
+  if(onMount)onMount(host);
+  return ()=>host.innerHTML="";
+}
+const closeModal=()=>document.getElementById("modalHost").innerHTML="";
+
+/* ================================================================================
+   БЛОК 2. ПАРСЕРЫ. Тип файла определяется по набору колонок и названиям листов,
+   имя файла не используется вообще. Каждый парсер при отсутствии обязательной
+   колонки бросает ParseError с указанием, чего именно не хватает.
+   ================================================================================ */
+class ParseError extends Error{constructor(m){super(m);this.name="ParseError";}}
+
+const A=(sh)=>XLSX.utils.sheet_to_json(sh,{header:1,raw:true,defval:null,blankrows:true});
+const cellsOf=(rows,maxR)=>{const o=[];for(let i=0;i<Math.min(rows.length,maxR||40);i++)
+  for(const c of (rows[i]||[]))if(typeof c==="string")o.push(clean(c).toLowerCase());return o;};
+const findRow=(rows,pred,lim)=>{for(let i=0;i<Math.min(rows.length,lim||120);i++)if(pred(rows[i]||[],i))return i;return -1;};
+const colIdx=(row,...names)=>{ // ищем колонку по вхождению подстроки, регистронезависимо
+  for(let i=0;i<row.length;i++){const v=clean(row[i]).toLowerCase();
+    if(v&&names.some(nm=>v===nm||v.includes(nm)))return i;}
+  return -1;};
+
+/* --- 2.1 Определение типа файла --- */
+function detectType(wb){
+  const names=wb.SheetNames.map(s=>clean(s).toLowerCase());
+  for(const sn of wb.SheetNames){
+    const rows=A(wb.Sheets[sn]); const t=cellsOf(rows,45).join("|");
+    if(t.includes("валовая прибыль")&&t.includes("себестоимость товаров"))return {type:"sales1c",sheet:sn};
+    if(t.includes("артикул товара поставщика")&&t.includes("количество остатков"))return {type:"pricat",sheet:sn};
+    if(clean(sn).toLowerCase()==="мп"&&t.includes("активность/период"))return {type:"mktplan",sheet:sn};
+    if(t.includes("бонус в руб")||/итог\s+\d-й\s+квартал/.test(t))return {type:"bonus",sheet:sn};
+    if(/план\s+оборот/.test(t))return {type:"planfile",sheet:sn};
+  }
+  if(names.some(x=>x.includes("продажи по ск"))||names.includes("марица товаров")||names.includes("матрица товаров"))
+    return {type:"viwb",sheet:null};
+  for(const sn of wb.SheetNames){
+    const rows=A(wb.Sheets[sn]); const t=cellsOf(rows,10).join("|");
+    if(t.includes("артикул")&&t.includes("себестоимость"))return {type:"costfile",sheet:sn};
+  }
+  return {type:null,sheet:null};
+}
+
+/* --- 2.2 Отчёт 1С «Валовая прибыль по клиентам» (продажи ГТВ РУС → ВсеИнструменты.ру) ---
+   Иерархия: менеджер → партнёр → контрагент → заказ → номенклатура. Уровень вложенности
+   в xlsx закодирован отступом, который SheetJS не отдаёт, поэтому строкой товара считаем ту,
+   где заполнена числовая «Количество» — у всех группировочных строк она пустая. */
+function parseSales1C(wb,sheet){
+  const rows=A(wb.Sheets[sheet]);
+  let from=null,to=null;
+  for(let i=0;i<Math.min(rows.length,25);i++)for(const c of (rows[i]||[])){
+    if(typeof c==="string"){
+      const m=clean(c).match(/(\d{2}\.\d{2}\.\d{4})\s*[-—–]\s*(\d{2}\.\d{2}\.\d{4})/);
+      if(m){from=m[1];to=m[2];}
+    }
+  }
+  if(!from)throw new ParseError("в отчёте 1С не найдена строка «Период: ДД.ММ.ГГГГ - ДД.ММ.ГГГГ»");
+  const hr=findRow(rows,r=>colIdx(r,"количество")>=0&&colIdx(r,"выручка")>=0,40);
+  if(hr<0)throw new ParseError("в отчёте 1С не найдена строка заголовков с колонками «Количество» и «Выручка»");
+  const H=rows[hr],H2=rows[hr+1]||[];
+  const cQty=colIdx(H,"количество"), cRev=colIdx(H,"выручка");
+  let cCost=colIdx(H,"себестоимость товаров"); if(cCost<0)cCost=colIdx(H,"себестоимость");
+  let cPur=colIdx(H2,"стоимость закупки"); if(cPur<0&&cCost>=0)cPur=cCost+1;
+  const cGr=colIdx(H,"валовая прибыль");
+  if(cRev<0)throw new ParseError("в отчёте 1С не найдена колонка «Выручка»");
+  if(cCost<0)throw new ParseError("в отчёте 1С не найдена колонка «Себестоимость товаров»");
+
+  /* Документные строки («Заказ клиента 00УТ-… от …») в этой выгрузке бывают двух видов: без количества
+     (обычная группировка) и С количеством — тогда это подытог документа, дублирующий свои же строки
+     номенклатуры. Раньше такие строки попадали в расчёт как псевдотовар «NOART:Заказ клиента …»
+     и завышали выручку. Теперь они в товары не идут вообще; отрицательные собираются в одну
+     справочную строку «Возврат». Строки номенклатуры внутри документов считаются как обычно. */
+  const items={},docs={}; let managers={},partner=null,docType=null;
+  const ret={qty:0,rev:0,cost:0,pur:0,gross:0,docs:0,list:[]};
+  let skippedDocRows=0,skippedDocRev=0;
+  let reportTotal=null;   // строка «Итого» самого отчёта 1С — контрольная сумма
+  for(let i=hr+2;i<rows.length;i++){
+    const r=rows[i]||[]; const a=clean(r[0]); if(!a)continue;
+    const q=n(r[cQty]);
+    if(q===null){ // группировочная строка
+      const md=a.match(RX_DOC);
+      if(md){docType=clean(md[1]);docs[docType]=(docs[docType]||0)+1;}
+      else if(/ООО|ЗАО|ПАО|ИП /i.test(a))partner=a;
+      else if(/^Итого$/i.test(a)){reportTotal={rev:num(r[cRev]),cost:num(r[cCost]),
+        gross:cGr>=0?num(r[cGr]):null,qty:null};}
+      else if(a.split(" ").length<=3&&/[А-Яа-я]\./.test(a))managers[a]=1;
+      continue;
+    }
+    if(/^Итого$/i.test(a)){reportTotal={rev:num(r[cRev]),cost:num(r[cCost]),
+      gross:cGr>=0?num(r[cGr]):null,qty:q};continue;}
+    const rev=num(r[cRev]), cost=num(r[cCost]), pur=cPur>=0?num(r[cPur]):0, gr=cGr>=0?num(r[cGr]):rev-cost;
+
+    // подытог любого уровня — в товары не берём
+    if(isGroupRow(a)){
+      skippedDocRows++; skippedDocRev+=rev;
+      // в сводную строку «Возврат» попадают только документы: уровни выше повторили бы ту же сумму
+      if(RX_DOC.test(a)&&(rev<0||gr<0)){ret.qty+=q;ret.rev+=rev;ret.cost+=cost;ret.pur+=pur;ret.gross+=gr;
+        ret.docs++;ret.list.push({doc:a,qty:q,rev,gross:gr});}
+      continue;
+    }
+    const art=extractArt(a)||("NOART:"+a.slice(0,40));
+    const it=items[art]||(items[art]={art,name:stripArt(a,art),qty:0,rev:0,cost:0,pur:0,gross:0,
+      retQty:0,retRev:0,lines:0});
+    it.qty+=q; it.rev+=rev; it.cost+=cost; it.pur+=pur; it.gross+=gr; it.lines++;
+    if(q<0){it.retQty+=-q;it.retRev+=-rev;}
+    if(it.name.length<6&&a.length>6)it.name=stripArt(a,art);
+  }
+  const [d,m,y]=from.split(".");
+  return {kind:"sales1c",key:y+"-"+m,label:MONTHS_C[+m-1]+" "+y,from,to,
+    items:Object.values(items),docs,ret,skippedDocRows,skippedDocRev,reportTotal,
+    managers:Object.keys(managers),days:daysBetween(from,to)};
+}
+function toDate(s){const[d,m,y]=String(s).split(".");return new Date(+y,+m-1,+d);}
+function daysBetween(a,b){return Math.max(1,Math.round((toDate(b)-toDate(a))/86400000)+1);}
+
+/* --- 2.3 Файл себестоимости (собственная управленческая выгрузка) ---
+   Заголовок разнесён на две строки: «Артикул | Номенклатура, Серия | Ед. изм. | (Себестоимость с НДС)» */
+function parseCostFile(wb,sheet){
+  const rows=A(wb.Sheets[sheet]);
+  const hr=findRow(rows,r=>colIdx(r,"артикул")>=0,15);
+  if(hr<0)throw new ParseError("в файле себестоимости не найдена колонка «Артикул»");
+  const H=rows[hr],H2=rows[hr+1]||[];
+  const cA=colIdx(H,"артикул"), cN=colIdx(H,"номенклатура","наименование"), cU=colIdx(H,"ед. изм","ед.изм");
+  let cC=colIdx(H,"себестоимость","cost"); let withVat=false;
+  if(cC<0){cC=colIdx(H2,"себестоимость","cost");}
+  if(cC>=0){const lab=clean(H[cC]||H2[cC]||"").toLowerCase();withVat=lab.includes("с ндс");}
+  if(cC<0)throw new ParseError("в файле себестоимости не найдена колонка «Себестоимость» (искали «себестоимость», «cost»)");
+  const out={};let cnt=0;
+  for(let i=hr+1;i<rows.length;i++){
+    const r=rows[i]||[];const art=clean(r[cA]);const v=n(r[cC]);
+    if(!art||v===null||!RX_ART.test(art))continue;
+    out[art.toUpperCase()]={v,name:clean(r[cN]),unit:clean(r[cU])||"шт",vat:withVat};cnt++;
+  }
+  if(!cnt)throw new ParseError("файл распознан как справочник себестоимости, но не найдено ни одной строки с артикулом и ценой");
+  return {kind:"costfile",map:out,count:cnt,withVat};
+}
+
+/* --- 2.4 PRICAT: каталог + остатки на складе ГТВ РУС --- */
+function parsePricat(wb,sheet){
+  const rows=A(wb.Sheets[sheet]);
+  const hr=findRow(rows,r=>colIdx(r,"артикул товара поставщика")>=0,15);
+  if(hr<0)throw new ParseError("в PRICAT не найдена колонка «Артикул товара поставщика»");
+  const H=rows[hr];
+  // «Закупочная цена» в PRICAT — это цена, по которой ВсеИнструменты.ру закупает у нас,
+  // то есть наша отпускная цена. Читаем её как справочную цену продажи, а не как затраты.
+  const cA=colIdx(H,"артикул товара поставщика"), cN=colIdx(H,"наименование"),
+        cB=colIdx(H,"бренд"), cS=colIdx(H,"количество остатков"),
+        cP=colIdx(H,"закупочная цена"), cR=colIdx(H,"рекомендованная цена"),
+        cBar=colIdx(H,"штрихкод");
+  if(cS<0)throw new ParseError("в PRICAT не найдена колонка «Количество остатков на складе»");
+  const out={};let cnt=0;
+  for(let i=hr+1;i<rows.length;i++){
+    const r=rows[i]||[];const art=clean(r[cA]);if(!art)continue;
+    out[art.toUpperCase()]={name:clean(r[cN]),brand:clean(r[cB]),stock:num(r[cS]),
+      viPrice:n(r[cP]),retail:n(r[cR]),barcode:clean(r[cBar])};cnt++;
+  }
+  return {kind:"pricat",map:out,count:cnt};
+}
+
+/* --- 2.5 Маркетинговый план ВИ (лист «МП») ---
+   Колонка C = актуальная стоимость с комиссией рекламораспространителя (D + E), далее 12 колонок месяцев
+   с количеством размещений. Расход месяца = количество × стоимость × НДС. */
+function parseMktPlan(wb,sheet){
+  const rows=A(wb.Sheets[sheet]);
+  const hr=findRow(rows,r=>colIdx(r,"активность/период")>=0,40);
+  if(hr<0)throw new ParseError("в маркетинговом плане не найдена строка заголовков с «Активность/период»");
+  const H=rows[hr];
+  const cAct=colIdx(H,"активность/период"), cDet=colIdx(H,"детализация");
+  let cPrice=-1,year=null;
+  for(let i=0;i<H.length;i++){const v=clean(H[i]).toLowerCase();
+    if(v.startsWith("актуальная стоимость")){cPrice=i;const m=v.match(/20\d\d/);if(m)year=m[0];break;}}
+  if(cPrice<0)throw new ParseError("в маркетинговом плане не найдена колонка «Актуальная стоимость …»");
+  const mCols=[];
+  for(let i=0;i<H.length;i++){const v=clean(H[i]).toLowerCase();const k=MONTHS.indexOf(v);if(k>=0)mCols.push({m:k,c:i});}
+  if(mCols.length<12)throw new ParseError("в маркетинговом плане найдено только "+mCols.length+" месячных колонок из 12");
+  if(!year)year=String(new Date().getFullYear());
+
+  // Верхняя часть листа: плановый товарооборот, процент бюджета, бюджет
+  const head={};
+  for(let i=0;i<hr;i++){const r=rows[i]||[];for(let c=0;c<r.length;c++){
+    const v=clean(r[c]).toLowerCase();if(!v)continue;
+    const nxt=n(r[c+1])!==null?n(r[c+1]):n(r[c+2]);
+    if(v.startsWith("предполагаемый"))head.turnover=nxt;
+    if(v.startsWith("фактический"))head.turnoverFact=nxt;
+    if(v.startsWith("процент марк"))head.pctBudget=nxt;
+    if(v.startsWith("бюджет на марк")&&head.budget==null)head.budget=nxt;
+  }}
+  const acts=[];let group="Без группы";
+  for(let i=hr+1;i<rows.length;i++){
+    const r=rows[i]||[];const nameA=clean(r[cAct]);if(!nameA)continue;
+    if(/^итого/i.test(nameA))continue;
+    const price=n(r[cPrice]);
+    const counts=mCols.map(mc=>n(r[mc.c])||0);
+    const total=counts.reduce((a,b)=>a+b,0);
+    if(price===null&&total===0){ // строка-заголовок раздела (БАННЕРНАЯ РЕКЛАМА и т.п.)
+      if(nameA===nameA.toUpperCase()&&nameA.length>4)group=nameA; continue; }
+    if(nameA===nameA.toUpperCase()&&price===null){group=nameA;continue;}
+    if(total===0)continue;
+    acts.push({group,name:nameA,detail:clean(r[cDet]),price:price||0,counts,
+      total,spend:counts.map(c=>c*(price||0))});
+  }
+  const byMonth=Array(12).fill(0);
+  acts.forEach(a=>a.spend.forEach((v,i)=>byMonth[i]+=v));
+  return {kind:"mktplan",year,acts,byMonth,head};
+}
+
+/* --- 2.5b Годовой план: оборот и маржа по месяцам ---
+   Строки «План оборот ГГГГ» и «План маржа ГГГГ», колонки — месяцы, последняя колонка «год».
+   Маржа здесь — валовая (оборот минус себестоимость), без вычета рекламы и бонусов. */
+function parsePlanFile(wb,sheet){
+  const rows=A(wb.Sheets[sheet]);
+  const hr=findRow(rows,r=>r.some(c=>typeof c==="string"&&MONTHS.includes(clean(c).toLowerCase())),20);
+  if(hr<0)throw new ParseError("в файле плана не найдена строка с названиями месяцев");
+  const mCols=[];
+  rows[hr].forEach((c,i)=>{const k=MONTHS.indexOf(clean(c).toLowerCase());if(k>=0)mCols.push({m:k,c:i});});
+  if(mCols.length<12)throw new ParseError("в файле плана найдено "+mCols.length+" месячных колонок из 12");
+  let year=null,rev=null,marg=null;
+  for(let i=hr;i<rows.length;i++){
+    const r=rows[i]||[];const lab=clean(r[0]).toLowerCase();
+    if(!lab)continue;
+    const ys=lab.match(/20\d\d/);if(ys&&!year)year=ys[0];
+    const vals=Array(12).fill(null);mCols.forEach(mc=>vals[mc.m]=n(r[mc.c]));
+    if(lab.includes("оборот"))rev=vals;
+    else if(lab.includes("маржа")||lab.includes("прибыл"))marg=vals;
+  }
+  if(!year){const y=n(rows[hr][0]);year=y&&y>2000?String(Math.round(y)):String(new Date().getFullYear());}
+  if(!rev)throw new ParseError("в файле плана не найдена строка «План оборот»");
+  return {kind:"planfile",year,rev,marg:marg||Array(12).fill(null)};
+}
+
+/* --- 2.6 Квартальные бонусы, выплачиваемые поставщиком покупателю --- */
+function parseBonus(wb,sheet){
+  const rows=A(wb.Sheets[sheet]);
+  const hr=findRow(rows,r=>colIdx(r,"бонус в руб")>=0,25);
+  if(hr<0)throw new ParseError("в файле бонусов не найдена колонка «бонус в руб»");
+  const H=rows[hr];
+  const cPct=colIdx(H,"бонус в %"), cRub=colIdx(H,"бонус в руб");
+  let q=null,year=null,base=null;
+  const items=[];
+  for(let i=hr+1;i<rows.length;i++){
+    const r=rows[i]||[];const lab=clean(r[0]);
+    if(!lab)continue;
+    const mq=lab.match(/итог\s+(\d)-й\s+квартал\s+(\d{4})/i);
+    if(mq){q=+mq[1];year=mq[2];continue;}
+    const rub=n(r[cRub]);
+    if(rub===null)continue;
+    const isMkt=/маркетинг/i.test(lab);
+    items.push({label:lab.replace(/\s*\d[\d\s\u00a0,\.]*руб\.?$/,"").trim(),
+      full:lab, pct:n(r[cPct]), rub, mkt:isMkt});
+  }
+  for(let i=hr;i<rows.length;i++){const r=rows[i]||[];
+    if(clean(r[1]).toLowerCase().startsWith("продажи без ндс"))base=n(r[2]);}
+  if(!q){ // запасной вариант: ищем квартал в любой ячейке
+    const t=cellsOf(rows,25).join("|");const m=t.match(/(\d)-й\s+квартал\s+(\d{4})/);
+    if(m){q=+m[1];year=m[2];}
+  }
+  if(!q)throw new ParseError("в файле бонусов не определён квартал (искали «Итог N-й квартал ГГГГ»)");
+  const total=items.reduce((a,b)=>a+b.rub,0);
+  return {kind:"bonus",key:year+"-Q"+q,q,year,items,total,base};
+}
+
+/* --- 2.7 Книга ВИ: продажи конечным покупателям, матрица, остатки ВИ --- */
+function parseVIWorkbook(wb){
+  const out={kind:"viwb",sell:null,matrix:{},stock:[],notes:[]};
+  for(const sn of wb.SheetNames){
+    const low=clean(sn).toLowerCase();const rows=A(wb.Sheets[sn]);
+    // Матрица товаров: GUID | Артикул поставщика | Наименование | Матрица
+    if(low.includes("рица товаров")){
+      const hr=findRow(rows,r=>colIdx(r,"артикул постав")>=0,10);
+      if(hr>=0){const cA=colIdx(rows[hr],"артикул постав"),cM=colIdx(rows[hr],"матрица"),cN=colIdx(rows[hr],"наименование");
+        // колонка «Матрица» содержит не флаг, а ABC-класс присвоенный ВсеИнструменты.ру: A / B / C / L / X
+        for(let i=hr+1;i<rows.length;i++){const r=rows[i]||[];const a=clean(r[cA]);if(!a)continue;
+          const cl=clean(r[cM]).toUpperCase();
+          out.matrix[a.toUpperCase()]={cls:cl||null,name:clean(r[cN])};}}
+      continue;
+    }
+    // Остатки ВИ: Supplier Name | Product Name | Quantity | Amount
+    if(low==="остатки"){
+      const hr=findRow(rows,r=>colIdx(r,"quantity")>=0&&colIdx(r,"amount")>=0,20);
+      if(hr<0){out.notes.push("лист «Остатки» пропущен: не найдены колонки Quantity/Amount");continue;}
+      const cN=colIdx(rows[hr],"product name"),cQ=colIdx(rows[hr],"quantity"),cAm=colIdx(rows[hr],"amount");
+      for(let i=hr+1;i<rows.length;i++){const r=rows[i]||[];const nm=clean(r[cN]);const q=n(r[cQ]);
+        if(!nm||q===null)continue;out.stock.push({name:nm,art:extractArt(nm),qty:q,amount:num(r[cAm])});}
+      continue;
+    }
+    // Динамика продаж по СКЮ: сводная, строки = бренд + месяцы, колонки = метрика × год
+    if(low.includes("продажи по ск")&&!out.sell){
+      const hr=findRow(rows,r=>colIdx(r,"названия строк")>=0,25);
+      if(hr<0)continue;
+      const metricRow=rows[hr-1]||[],yearRow=rows[hr];
+      let curMetric=null;const cols=[];
+      for(let c=1;c<yearRow.length;c++){
+        const mv=clean(metricRow[c]);if(mv)curMetric=mv;
+        const y=n(yearRow[c]);if(y&&y>2000&&y<2100&&curMetric)cols.push({metric:curMetric,year:String(Math.round(y)),c});
+      }
+      if(!cols.length)continue;
+      const groups=[];let cur=null;
+      for(let i=hr+1;i<rows.length;i++){
+        const r=rows[i]||[];const lab=clean(r[0]);if(!lab)continue;
+        const mi=MONTHS_C.findIndex(m=>m.toLowerCase()===lab.toLowerCase());
+        const vals={};cols.forEach(cc=>{const v=n(r[cc.c]);if(v!==null)vals[cc.metric+"|"+cc.year]=v;});
+        if(mi<0){cur={name:lab,total:vals,months:[]};groups.push(cur);}
+        else if(cur)cur.months.push({m:mi,vals});
+      }
+      out.sell={cols,groups};
+      continue;
+    }
+    if(low.includes("регион"))out.notes.push("лист «Регионы» не используется: в выгрузке иерархия регион→город→SKU передана только отступами, которые не читаются из xlsx");
+    if(low.includes("уперсет"))out.notes.push("лист «Суперсет» не используется: это сводка целей, а не транзакционные данные");
+  }
+  if(!out.sell&&!Object.keys(out.matrix).length&&!out.stock.length)
+    throw new ParseError("книга ВИ распознана, но ни один из листов («Продажи по СКЮ», «Матрица товаров», «Остатки») не удалось разобрать");
+  return out;
+}
+
+/* ================================================================================
+   БЛОК 2c. СИНХРОНИЗАЦИЯ МЕЖДУ БРАУЗЕРАМИ ЧЕРЕЗ GITHUB GIST
+
+   localStorage привязан к одному браузеру на одной машине — это устройство хранилища,
+   а не настройка, и обойти его нельзя. Чтобы срезы и загруженные отчёты были видны
+   в любом браузере, нужен внешний носитель состояния. Дашборд уже лежит на GitHub Pages,
+   поэтому используем то, что у пользователя точно есть: приватный gist того же аккаунта.
+
+   Токен хранится отдельным ключом и НЕ попадает в файл состояния при выгрузке —
+   иначе его можно было бы случайно кому-нибудь переслать.
+   ================================================================================ */
+const LS_TOKEN="vidash_v1_token", LS_SYNC="vidash_v1_sync", LS_STAMP="vidash_v1_stamp";
+const GIST_FILE="vseinstrumenty-dashboard-state.json";
+
+/* Два способа хранения. Репозиторий — основной: fine-grained токены официально не поддерживают
+   Gists API (это одна из немногих возможностей, для которых GitHub до сих пор требует classic-токен),
+   поэтому токен с правом «Contents: Read and write» на репозиторий работает, а с правом «Gists» — нет. */
+const SY={mode:"repo",token:"",owner:"",repo:"",path:"dashboard-state.json",branch:"",
+  gistId:"",on:false,busy:false,last:null,err:"",pushT:null};
+
+function loadSync(){
+  try{
+    SY.token=localStorage.getItem(LS_TOKEN)||"";
+    const s=JSON.parse(localStorage.getItem(LS_SYNC)||"{}");
+    Object.assign(SY,{mode:s.mode||"repo",owner:s.owner||"",repo:s.repo||"",
+      path:s.path||"dashboard-state.json",branch:s.branch||"",
+      gistId:s.gistId||"",on:!!s.on,last:s.last||null});
+  }catch(e){}
+  guessRepo();
+}
+/* Если страница открыта с GitHub Pages, владельца и репозиторий можно определить из адреса —
+   пользователю остаётся только вставить токен. */
+function guessRepo(){
+  if(SY.owner&&SY.repo)return;
+  try{
+    const h=location.hostname,p=location.pathname.split("/").filter(Boolean);
+    const m=h.match(/^([^.]+)\.github\.io$/i);
+    if(!m)return;
+    SY.owner=SY.owner||m[1];
+    SY.repo=SY.repo||(p.length?p[0]:m[1]+".github.io");
+  }catch(e){}
+}
+function saveSync(){
+  try{
+    localStorage.setItem(LS_TOKEN,SY.token);
+    localStorage.setItem(LS_SYNC,JSON.stringify({mode:SY.mode,owner:SY.owner,repo:SY.repo,
+      path:SY.path,branch:SY.branch,gistId:SY.gistId,on:SY.on,last:SY.last}));
+  }catch(e){}
+}
+/* Отметка времени последнего локального изменения — по ней решаем, чья версия свежее. */
+function stamp(){try{localStorage.setItem(LS_STAMP,String(Date.now()));}catch(e){}}
+function localStamp(){const v=+(localStorage.getItem(LS_STAMP)||0);return isFinite(v)?v:0;}
+
+/* Полный слепок: то же, что уходит в файл состояния, но без токена. */
+function fullSnapshot(){
+  return {kind:"vidash-state",saved:Date.now(),savedISO:new Date().toISOString(),
+    data:packState(),manualCost:S.manualCost,plan:S.plan,cfg:S.cfg,snaps:S.snaps,cur:S.cur};
+}
+function applySnapshot(j){
+  unpackState(j.data);
+  S.manualCost=j.manualCost||{};S.plan=j.plan||{};
+  S.cfg={...DEF_CFG,...(j.cfg||{})};S.snaps=j.snaps||[];
+  if(j.cur)S.cur=j.cur;
+  pickActiveMatrix();
+}
+
+/* Состояние весит около 1,7 МБ, поэтому сжимаем его перед отправкой: около 200 КБ вместо 1,7 МБ.
+   Если браузер не умеет CompressionStream, отправляем как есть — читатель разберётся по сигнатуре gzip. */
+const HAS_GZ=typeof CompressionStream!=="undefined"&&typeof DecompressionStream!=="undefined";
+async function gzip(str){
+  const cs=new CompressionStream("gzip");
+  const w=cs.writable.getWriter();w.write(new TextEncoder().encode(str));w.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+async function gunzip(bytes){
+  const ds=new DecompressionStream("gzip");
+  const w=ds.writable.getWriter();w.write(bytes);w.close();
+  return new TextDecoder().decode(await new Response(ds.readable).arrayBuffer());
+}
+const toB64=bytes=>{let s="";const CH=0x8000;
+  for(let i=0;i<bytes.length;i+=CH)s+=String.fromCharCode.apply(null,bytes.subarray(i,i+CH));
+  return btoa(s);};
+async function encodePayload(str){
+  if(!HAS_GZ)return {b64:toB64(new TextEncoder().encode(str)),gz:false};
+  return {b64:toB64(await gzip(str)),gz:true};
+}
+async function decodePayload(bytes){
+  // 1f 8b — сигнатура gzip; так отличаем сжатый файл от обычного JSON
+  if(bytes[0]===0x1f&&bytes[1]===0x8b){
+    if(!HAS_GZ)throw new Error("состояние сжато, а этот браузер не умеет его распаковывать — обновите браузер");
+    return gunzip(bytes);
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+async function gh(path,opt){
+  const r=await fetch("https://api.github.com"+path,{
+    ...opt,
+    headers:{"Accept":"application/vnd.github+json","Authorization":"Bearer "+SY.token,
+      "X-GitHub-Api-Version":"2022-11-28","Content-Type":"application/json",...(opt&&opt.headers)}
+  });
+  if(r.status===401)throw new Error("токен не принят (401). Проверьте, что он не истёк и скопирован целиком");
+  if(r.status===403){
+    const need=r.headers.get("x-accepted-github-permissions")||"";
+    throw new Error(SY.mode==="gist"
+      ? "доступ запрещён (403). Fine-grained токены не работают с Gists — GitHub требует для них classic-токен. Переключитесь на режим «Файл в репозитории»"
+      : "доступ запрещён (403)."+(need?" GitHub ожидает право: "+need+".":"")+" Проверьте, что у токена есть «Contents: Read and write» именно на этот репозиторий");
+  }
+  if(r.status===404)throw new Error(SY.mode==="gist"
+    ? "gist не найден (404) — нажмите «Создать новое хранилище»"
+    : "репозиторий или ветка не найдены (404). Проверьте владельца и название репозитория, а также что токен выдан именно на него");
+  if(r.status===422)throw new Error("GitHub отклонил запись (422). Обычно это конфликт версий — нажмите «Загрузить из облака», потом отправьте снова");
+  if(!r.ok)throw new Error("GitHub вернул "+r.status+" "+r.statusText);
+  return r;
+}
+const ghJSON=async(p,o)=>(await gh(p,o)).json();
+
+/* ---- Режим «файл в репозитории»: Contents API ---- */
+const repoBase=()=>"/repos/"+encodeURIComponent(SY.owner)+"/"+encodeURIComponent(SY.repo);
+const refQ=()=>SY.branch?"?ref="+encodeURIComponent(SY.branch):"";
+
+/* sha берём из листинга каталога: для файлов крупнее 1 МБ обычный запрос содержимого его не отдаёт. */
+async function repoSha(){
+  const p=SY.path.replace(/^\/+/,"");
+  const dir=p.includes("/")?p.slice(0,p.lastIndexOf("/")):"";
+  const name=p.slice(p.lastIndexOf("/")+1);
+  try{
+    const list=await ghJSON(repoBase()+"/contents/"+dir+refQ());
+    if(!Array.isArray(list))return null;
+    const f=list.find(x=>x.name===name);
+    return f?f.sha:null;
+  }catch(e){
+    if(/404/.test(e.message))return null;   // каталога или файла ещё нет — это нормально
+    throw e;
+  }
+}
+async function repoPush(str){
+  const {b64}=await encodePayload(str);
+  const sha=await repoSha();
+  await ghJSON(repoBase()+"/contents/"+SY.path.replace(/^\/+/,""),{method:"PUT",body:JSON.stringify({
+    message:"Состояние дашборда "+new Date().toLocaleString("ru-RU"),
+    content:b64,...(sha?{sha}:{}),...(SY.branch?{branch:SY.branch}:{})})});
+}
+async function repoPull(){
+  const r=await gh(repoBase()+"/contents/"+SY.path.replace(/^\/+/,"")+refQ(),
+    {headers:{"Accept":"application/vnd.github.raw"}});
+  return decodePayload(new Uint8Array(await r.arrayBuffer()));
+}
+
+/* ---- Режим «gist» оставлен для тех, у кого classic-токен ---- */
+async function gistPush(str){
+  const files={[GIST_FILE]:{content:str}};
+  if(SY.gistId)await ghJSON("/gists/"+SY.gistId,{method:"PATCH",body:JSON.stringify({files})});
+  else{
+    const j=await ghJSON("/gists",{method:"POST",body:JSON.stringify({
+      description:"Состояние дашборда ВсеИнструменты.ру · ГТВ РУС",public:false,files})});
+    SY.gistId=j.id;
+  }
+}
+async function gistPull(){
+  const j=await ghJSON("/gists/"+SY.gistId);
+  const f=j.files&&j.files[GIST_FILE];
+  if(!f)throw new Error("в хранилище нет файла состояния");
+  return f.truncated?(await fetch(f.raw_url)).text():f.content;
+}
+
+function syncReady(){
+  if(!SY.token)return "не указан токен";
+  if(SY.mode==="repo"){
+    if(!SY.owner||!SY.repo)return "не указаны владелец и репозиторий";
+    if(!SY.path)return "не указан путь к файлу";
+  }
+  return null;
+}
+
+async function pushCloud(silent){
+  const bad=syncReady();if(bad)throw new Error(bad);
+  SY.busy=true;SY.err="";renderSyncBadge();
+  try{
+    const body=JSON.stringify(fullSnapshot());
+    if(SY.mode==="repo")await repoPush(body); else await gistPush(body);
+    SY.last=Date.now();saveSync();
+    if(!silent)toast("Состояние отправлено в облако"+(HAS_GZ&&SY.mode==="repo"?" (сжато)":"")+
+      ". Размер: <b>"+(body.length/1048576).toFixed(2)+" МБ</b>","ok");
+    return true;
+  }catch(e){
+    SY.err=e.message;
+    if(!silent)toast("Не удалось отправить состояние: "+esc(e.message),"err",12000);
+    else toast("Автосинхронизация не прошла: "+esc(e.message)+"<br><span class='xs mut'>Данные сохранены локально.</span>","warn",9000);
+    throw e;
+  }finally{SY.busy=false;renderSyncBadge();}
+}
+
+async function pullCloud(auto){
+  const bad=syncReady();if(bad)throw new Error(bad);
+  if(SY.mode==="gist"&&!SY.gistId)throw new Error("не указан gist");
+  SY.busy=true;SY.err="";renderSyncBadge();
+  try{
+    const raw=SY.mode==="repo"?await repoPull():await gistPull();
+    const snap=JSON.parse(raw);
+    if(snap.kind!=="vidash-state")throw new Error("в хранилище лежит посторонний файл");
+    if(auto&&snap.saved<=localStamp())return null;   // локальная версия свежее — не трогаем
+    applySnapshot(snap);
+    SY.last=Date.now();saveSync();
+    try{localStorage.setItem(LS_STAMP,String(snap.saved));}catch(e){}
+    return snap;
+  }catch(e){
+    SY.err=e.message;
+    if(!auto)toast("Не удалось загрузить состояние: "+esc(e.message),"err",12000);
+    throw e;
+  }finally{SY.busy=false;renderSyncBadge();}
+}
+
+/* Автоотправка с задержкой: пока идёт серия правок, в облако уходит только последняя версия. */
+function schedulePush(){
+  if(!SY.on||syncReady())return;
+  clearTimeout(SY.pushT);
+  SY.pushT=setTimeout(()=>{pushCloud(true).catch(()=>{});},4000);
+}
+
+function renderSyncBadge(){
+  const el=document.getElementById("syncBadge");
+  if(!el)return;
+  if(!SY.on){el.className="tag n";el.textContent="локально";el.title="Синхронизация выключена: данные видны только в этом браузере";return;}
+  if(SY.busy){el.className="tag acc";el.textContent="синхронизация…";return;}
+  if(SY.err){el.className="tag bad";el.textContent="ошибка синхр.";el.title=SY.err;return;}
+  el.className="tag ok";
+  el.textContent="в облаке";
+  el.title=SY.last?"Последняя синхронизация: "+new Date(SY.last).toLocaleString("ru-RU"):"";
+}
+
+/* ================================================================================
+   БЛОК 3. ЗАГРУЗКА ФАЙЛОВ И СЛИЯНИЕ ПЕРИОДОВ
+   Любая загрузка (в том числе повторная за уже существующий период) запускает
+   полный пересчёт всех вкладок без перезагрузки страницы.
+   ================================================================================ */
+async function handleFiles(fileList){
+  const files=[...fileList];if(!files.length)return;
+  const pend=[];  // конфликты по периодам решаем после разбора всех файлов
+  for(const f of files){
+    try{
+      const buf=await f.arrayBuffer();
+      const wb=XLSX.read(buf,{type:"array",cellDates:false});
+      const det=detectType(wb);
+      if(!det.type){
+        toast("<b>"+esc(f.name)+"</b> — тип отчёта не распознан.<br>Листы: "+esc(wb.SheetNames.join(", "))+
+              ".<br>Ожидались отчёт 1С «Валовая прибыль», PRICAT, справочник себестоимости, лист «МП», файл бонусов или книга ВИ.","err",11000);
+        continue;
+      }
+      let res;
+      switch(det.type){
+        case "sales1c": res=parseSales1C(wb,det.sheet);break;
+        case "costfile":res=parseCostFile(wb,det.sheet);break;
+        case "pricat":  res=parsePricat(wb,det.sheet);break;
+        case "mktplan": res=parseMktPlan(wb,det.sheet);break;
+        case "bonus":   res=parseBonus(wb,det.sheet);break;
+        case "planfile":res=parsePlanFile(wb,det.sheet);break;
+        case "viwb":    res=parseVIWorkbook(wb);break;
+      }
+      res.fileName=f.name;
+      if(res.kind==="sales1c")pend.push(res); else applyNonPeriodic(res);
+    }catch(e){
+      if(e instanceof ParseError)
+        toast("<b>"+esc(f.name)+"</b> — ошибка разбора: "+esc(e.message)+".<br>"+
+              "Похоже, площадка изменила формат выгрузки. Файл пропущен, остальные данные не затронуты.","err",12000);
+      else{console.error(e);toast("<b>"+esc(f.name)+"</b> — файл не читается: "+esc(e.message),"err",9000);}
+    }
+  }
+  if(pend.length)await ingestSales(pend); else finishLoad();
+}
+
+/* Наборы матрицы товаров ВИ. Период внутри файла не передаётся ничем, поэтому квартал угадываем
+   по названию файла, а если не вышло — пользователь выбирает его сам на вкладке «Матрица ВИ». */
+function guessQuarter(name){
+  const s=String(name||"");
+  const q=s.match(/(\d)[\s_\-]*(?:[йя][\s_\-]*)?кв(?:артал)?/i)||s.match(/\bQ([1-4])\b/i);
+  const y=s.match(/20\d\d/);
+  if(!q)return null;
+  return (y?y[0]:String(new Date().getFullYear()))+"-Q"+q[1];
+}
+function addMatrixSet(r){
+  const id=r.fileName||("set"+Date.now());
+  S.matrixSets[id]={id,label:id.replace(/\.xlsx?$/i,""),quarter:guessQuarter(id),map:r.matrix,
+    count:Object.keys(r.matrix).length};
+  pickActiveMatrix();
+}
+/* Активный набор — тот, что выбран вручную, иначе с самым поздним кварталом, иначе последний загруженный. */
+function pickActiveMatrix(){
+  const sets=Object.values(S.matrixSets);
+  if(!sets.length){S.matrix={};return;}
+  let act=S.cfg.matrixActive&&S.matrixSets[S.cfg.matrixActive];
+  if(!act){const dated=sets.filter(s=>s.quarter).sort((a,b)=>a.quarter<b.quarter?1:-1);
+    act=dated[0]||sets[sets.length-1];}
+  S.matrix=act.map;
+}
+
+/* Непериодические справочники просто замещают предыдущую версию. */
+function applyNonPeriodic(r){
+  if(r.kind==="costfile"){S.costFile=r.map;
+    toast("Справочник себестоимости обновлён: <b>"+r.count+"</b> артикулов"+(r.withVat?" (с НДС)":""),"ok");}
+  if(r.kind==="pricat"){S.pricat=r.map;
+    toast("Каталог и остатки склада ГТВ РУС: <b>"+r.count+"</b> позиций","ok");}
+  if(r.kind==="mktplan"){S.mkt=r;
+    toast("Маркетинговый план "+r.year+": <b>"+r.acts.length+"</b> активностей с размещениями","ok");}
+  if(r.kind==="bonus"){S.bonus[r.key]=r;
+    toast("Бонусы "+r.q+"&nbsp;кв. "+r.year+": <b>"+money(r.total)+"</b>","ok");}
+  if(r.kind==="planfile"){S.planFile=r;
+    toast("Годовой план "+r.year+" загружен: оборот "+money(r.rev.reduce((a,b)=>a+(b||0),0))
+      +", маржа "+money(r.marg.reduce((a,b)=>a+(b||0),0)),"ok",7000);}
+  if(r.kind==="viwb"){
+    if(r.sell)S.viSell=r.sell;
+    if(Object.keys(r.matrix).length)addMatrixSet(r);
+    if(r.stock.length)S.viStock=r.stock;
+    toast("Данные ВсеИнструменты.ру загружены"+(r.notes.length?"<br><span class='xs mut'>"+r.notes.map(esc).join("<br>")+"</span>":""),"ok",8000);
+  }
+}
+
+/* Слияние продаж: если период уже загружен — спрашиваем «заменить или объединить». */
+async function ingestSales(list){
+  for(const r of list){
+    const ex=S.periods[r.key];
+    if(ex&&ex.items&&ex.items.length){
+      const mode=await askConflict(r,ex);
+      if(mode==="skip")continue;
+      if(mode==="replace")S.periods[r.key]=periodFrom(r);
+      else S.periods[r.key]=mergePeriod(ex,r);
+    }else S.periods[r.key]=periodFrom(r);
+  }
+  finishLoad();
+}
+function periodFrom(r){
+  return {key:r.key,label:r.label,from:r.from,to:r.to,days:r.days,docs:r.docs,
+    sources:[r.fileName],items:r.items,ret:r.ret,skippedDocRows:r.skippedDocRows,
+    skippedDocRev:r.skippedDocRev,reportTotal:r.reportTotal};
+}
+function mergePeriod(ex,r){
+  const mix=(a,b)=>{const map={};(a||[]).forEach(i=>map[i.art]={...i});
+    (b||[]).forEach(i=>{const t=map[i.art];
+      if(!t)map[i.art]={...i};
+      else ["qty","rev","cost","pur","gross","retQty","retRev","lines"].forEach(k=>t[k]+=i[k]);});
+    return Object.values(map);};
+  const docs={...(ex.docs||{})};Object.entries(r.docs||{}).forEach(([k,v])=>docs[k]=(docs[k]||0)+v);
+  return {key:ex.key,label:ex.label,from:ex.from<r.from?ex.from:r.from,to:ex.to>r.to?ex.to:r.to,
+    days:Math.max(ex.days,r.days),docs,
+    sources:[...(ex.sources||[]),r.fileName],
+    items:mix(ex.items,r.items),
+    ret:mergeRet(ex.ret,r.ret),
+    skippedDocRows:(ex.skippedDocRows||0)+(r.skippedDocRows||0),
+    skippedDocRev:(ex.skippedDocRev||0)+(r.skippedDocRev||0),
+    reportTotal:(ex.reportTotal&&r.reportTotal)
+      ?{rev:ex.reportTotal.rev+r.reportTotal.rev,cost:ex.reportTotal.cost+r.reportTotal.cost,
+        gross:(ex.reportTotal.gross||0)+(r.reportTotal.gross||0),qty:null}
+      :(ex.reportTotal||r.reportTotal)};
+}
+function mergeRet(a,b){
+  const z={qty:0,rev:0,cost:0,pur:0,gross:0,docs:0,list:[]};
+  [a,b].forEach(x=>{if(!x)return;["qty","rev","cost","pur","gross","docs"].forEach(k=>z[k]+=x[k]||0);
+    z.list=z.list.concat(x.list||[]);});
+  return z;
+}
+function askConflict(r,ex){
+  return new Promise(res=>{
+    modal(`<h3>Период «${esc(r.label)}» уже загружен</h3>
+      <p class="hint">Загружен из: ${esc((ex.sources||[]).join(", "))} — ${ex.items.length} артикулов, выручка ${money(ex.items.reduce((a,b)=>a+b.rev,0))}.<br>
+      Новый файл: ${esc(r.fileName)} — ${r.items.length} артикулов, выручка ${money(r.items.reduce((a,b)=>a+b.rev,0))}.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+        <button class="btn primary" data-a="replace">Заменить данными нового файла</button>
+        <button class="btn" data-a="merge">Объединить (сложить строки)</button>
+        <button class="btn ghost" data-a="skip">Пропустить файл</button>
+      </div>
+      <p class="hint" style="margin-top:14px">Заменяйте, если новый файл — обновлённая выгрузка за тот же период.
+      Объединяйте, если файлы содержат разные части периода. Введённая вручную себестоимость и планы не сбрасываются в обоих случаях.</p>`,
+    host=>{host.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{closeModal();res(b.dataset.a);});});
+  });
+}
+function finishLoad(){
+  const keys=Object.keys(S.periods).sort();
+  if(!S.cur||(S.cur!=="ALL"&&!S.periods[S.cur]))S.cur=keys.length?keys[keys.length-1]:null;
+  save();renderAll();  // полный пересчёт всех метрик, графиков, автовыводов и таблиц
+  if(keys.length)toast("Пересчёт выполнен: периодов <b>"+keys.length+"</b>","ok",3500);
+}
+
+/* ================================================================================
+   БЛОК 4. ОПРЕДЕЛЕНИЕ ИСТОЧНИКА СЕБЕСТОИМОСТИ
+   Приоритет: из отчёта 1С → справочник себестоимости → вручную.
+   Первые два помечаются как «из отчёта», третий — «вручную», иначе «не заполнено».
+   «Закупочная цена» из PRICAT сюда НЕ входит: это расчётная цена продажи для ВсеИнструменты.ру,
+   а не наши затраты — подставлять её как себестоимость означало бы обнулить всю маржу.
+   ================================================================================ */
+function unitCost(art,it){
+  const vat=S.cfg.vatCost?S.cfg.vat:1;
+  if(it&&it.qty>0&&it.cost){                       // 1С уже содержит себестоимость продаж
+    return {v:it.cost/it.qty,src:"report",label:"из отчёта 1С"};
+  }
+  const cf=S.costFile[art];
+  if(cf&&cf.v){return {v:cf.v/(cf.vat?vat:1),src:"report",label:"из справочника"+(cf.vat?" (÷НДС)":"")};}
+  const mc=S.manualCost[art];
+  if(mc!=null&&mc!==""&&isFinite(+mc))return {v:+mc,src:"manual",label:"вручную"};
+  return {v:null,src:"none",label:"не заполнено"};
+}
+
+/* ================================================================================
+   БЛОК 5. РАСЧЁТ МЕТРИК ПЕРИОДА
+   Цепочка: выручка → себестоимость → бонусы → маркетинг → налог → чистая прибыль.
+   Реклама и бонусы разносятся на артикул пропорционально доле в выручке.
+   ================================================================================ */
+function activePeriods(){
+  const keys=Object.keys(S.periods).sort();
+  if(!keys.length)return [];
+  if(S.cur==="ALL")return keys.map(k=>S.periods[k]);
+  return S.periods[S.cur]?[S.periods[S.cur]]:[];
+}
+function monthsOf(ps){return ps.map(p=>({y:+p.key.slice(0,4),m:+p.key.slice(5,7)-1,key:p.key}));}
+
+/* Расход на рекламу за период — из маркетингового плана, по месяцам периода. */
+function adSpend(ps){
+  if(!S.mkt)return {v:null,detail:[],reason:"не загружен маркетинговый план (лист «МП»)"};
+  const ms=monthsOf(ps).filter(x=>String(x.y)===String(S.mkt.year));
+  if(!ms.length)return {v:null,detail:[],
+    reason:"маркетинговый план загружен за "+S.mkt.year+" г., а выбранный период — за другой год"};
+  const vat=S.cfg.vat;let sum=0;const detail=[];
+  S.mkt.acts.forEach(a=>{
+    let s=0,c=0;ms.forEach(x=>{s+=a.spend[x.m]*vat;c+=a.counts[x.m];});
+    if(s>0){sum+=s;detail.push({name:a.name,group:a.group,detail:a.detail,count:c,spend:s,price:a.price*vat});}
+  });
+  detail.sort((a,b)=>b.spend-a.spend);
+  return {v:sum,detail,months:ms.length};
+}
+
+/* Квартальные бонусы разносим на месяцы квартала пропорционально выручке этих месяцев. */
+function bonusFor(ps,revByPeriod){
+  const out={v:0,items:{},missing:[],skippedMkt:0};
+  const qs={};
+  monthsOf(ps).forEach(x=>{const q=Math.floor(x.m/3)+1;const k=x.y+"-Q"+q;(qs[k]=qs[k]||[]).push(x);});
+  Object.keys(qs).forEach(k=>{
+    const b=S.bonus[k];
+    if(!b){out.missing.push(k.replace("-Q"," г., ")+" кв.");return;}
+    // доля выбранных месяцев квартала в выручке всего квартала: считаем по загруженным месяцам квартала
+    const allQ=Object.keys(S.periods).filter(pk=>{const y=+pk.slice(0,4),m=+pk.slice(5,7)-1;
+      return y+"-Q"+(Math.floor(m/3)+1)===k;});
+    const totQ=allQ.reduce((a,pk)=>a+sumRev(S.periods[pk]),0);
+    const selQ=qs[k].reduce((a,x)=>a+(revByPeriod[x.key]||0),0);
+    const share=totQ>0?selQ/totQ:1/3*qs[k].length;
+    b.items.forEach(it=>{
+      if(it.mkt&&S.cfg.skipMktBonus){out.skippedMkt+=it.rub*share;return;}
+      const v=it.rub*share;if(!v)return;
+      out.items[it.label]=(out.items[it.label]||0)+v;out.v+=v;
+    });
+  });
+  return out;
+}
+const rowsOf=p=>p.items||[];
+const sumRev=p=>rowsOf(p).reduce((a,b)=>a+b.rev,0);
+
+function compute(){
+  const ps=activePeriods();
+  const M={ok:false,ps};
+  if(!ps.length)return M;
+  M.label=ps.length===1?ps[0].label:"Все периоды ("+ps.length+")";
+  M.from=ps.map(p=>p.from).sort((a,b)=>toDate(a)-toDate(b))[0];
+  M.to=ps.map(p=>p.to).sort((a,b)=>toDate(b)-toDate(a))[0];
+  M.days=ps.reduce((a,p)=>a+p.days,0);
+  M.docs={};ps.forEach(p=>Object.entries(p.docs||{}).forEach(([k,v])=>M.docs[k]=(M.docs[k]||0)+v));
+  // справочная агрегированная строка «Возврат»: подытоги документов с отрицательным оборотом или прибылью
+  M.ret=ps.reduce((z,p)=>mergeRet(z,p.ret),null)||{qty:0,rev:0,cost:0,gross:0,docs:0,list:[]};
+  M.skippedDocRows=ps.reduce((a,p)=>a+(p.skippedDocRows||0),0);
+
+  // --- агрегация по артикулу ---
+  const items={},revByPeriod={};
+  ps.forEach(p=>{
+    revByPeriod[p.key]=sumRev(p);
+    rowsOf(p).forEach(i=>{
+      const t=items[i.art]||(items[i.art]={art:i.art,name:i.name,qty:0,rev:0,rcost:0,pur:0,gross:0,retQty:0,retRev:0});
+      t.qty+=i.qty;t.rev+=i.rev;t.rcost+=i.cost;t.pur+=i.pur;t.gross+=i.gross;
+      t.retQty+=i.retQty||0;t.retRev+=i.retRev||0;
+      if(i.name&&i.name.length>t.name.length)t.name=i.name;
+    });
+  });
+  const arr=Object.values(items);
+  M.revenue=arr.reduce((a,b)=>a+b.rev,0);
+  M.qty=arr.reduce((a,b)=>a+b.qty,0);
+
+  // --- себестоимость и покрытие ---
+  let cogs=0,covRev=0,covRepRev=0,covManRev=0,noneRev=0,cntNone=0,cntMan=0,cntRep=0;
+  arr.forEach(t=>{
+    const uc=unitCost(t.art,{qty:t.qty,cost:t.rcost});
+    t.uc=uc.v;t.ucSrc=uc.src;t.ucLabel=uc.label;
+    t.cat=catOf(t.art);
+    t.price=t.qty!==0?t.rev/t.qty:null;
+    // покрытие считаем по модулю выручки: строки возвратов дают отрицательную выручку
+    // и без модуля доля «известной» себестоимости могла бы превысить 100%
+    const aRev=Math.abs(t.rev);
+    if(uc.v!=null){
+      t.cogs=uc.v*t.qty; cogs+=t.cogs; covRev+=aRev;
+      if(uc.src==="manual"){covManRev+=aRev;cntMan++;}else{covRepRev+=aRev;cntRep++;}
+    }else{t.cogs=null;noneRev+=aRev;cntNone++;}
+  });
+  M.items=arr;
+  M.cogs=cogs;
+  const absRev=covRev+noneRev;
+  M.cov={rev:covRev,repRev:covRepRev,manRev:covManRev,noneRev,
+    pct:absRev?Math.min(1,covRev/absRev):0, cntNone,cntMan,cntRep,cnt:arr.length};
+
+  // --- реклама и бонусы ---
+  // Если в периоде не осталось ни одной строки (например, все документы — «Заказ клиента» и они исключены),
+  // расходы не разносим: иначе получился бы фиктивный убыток на пустой выручке.
+  M.empty=!arr.length;
+  M.ad=M.empty?{v:null,detail:[],reason:"в периоде нет строк для расчёта"}:adSpend(ps);
+  M.bonus=M.empty?{v:0,items:{},missing:[],skippedMkt:0}:bonusFor(ps,revByPeriod);
+  const adV=M.ad.v||0, bnV=M.bonus.v||0;
+  M.adV=adV;M.bnV=bnV;
+  M.drr=M.revenue?adV/M.revenue:null;
+
+  // --- налог и чистая прибыль ---
+  const gross=M.revenue-cogs;                       // по известной себестоимости; непокрытая часть — без себестоимости
+  M.grossFull=gross;
+  M.tax=S.cfg.taxRate?Math.max(0,(gross-adV-bnV))*S.cfg.taxRate/100:0;
+  M.net=gross-adV-bnV-M.tax;
+  M.margin=M.revenue?M.net/M.revenue:null;
+  M.roi=cogs?M.net/cogs:null;
+  M.cogsPct=M.revenue?cogs/M.revenue:null;
+
+  /* Разнесение рекламы и бонусов на артикул. База по умолчанию — выручка (рубли продаж),
+     переключается на количество штук на вкладке «Данные». Разносится на все товары периода. */
+  const byQty=S.cfg.adBase==="qty";
+  const totQty=arr.reduce((a,b)=>a+Math.max(0,b.qty),0)||1;
+  const shareBase=M.revenue||1;
+  arr.forEach(t=>{
+    t.share=t.rev/shareBase;
+    t.adShare=byQty?Math.max(0,t.qty)/totQty:t.share;
+    t.ad=adV*t.adShare; t.bn=bnV*t.adShare; t.taxA=M.tax*t.share;
+    if(t.cogs!=null){
+      t.grossP=t.rev-t.cogs;
+      t.net=t.grossP-t.ad-t.bn-t.taxA;
+      t.marginP=t.rev?t.net/t.rev:null;
+      t.roiP=t.cogs?t.net/t.cogs:null;
+      t.netUnit=t.qty?t.net/t.qty:null;
+      t.drr=t.rev?t.ad/t.rev:null;
+    }else{t.grossP=null;t.net=null;t.marginP=null;t.roiP=null;t.netUnit=null;t.drr=t.rev?t.ad/t.rev:null;}
+    const pc=S.pricat[t.art];
+    t.stock=pc?pc.stock:null;
+    t.retail=pc?pc.retail:null;
+    t.viPrice=pc?pc.viPrice:null;   // прайсовая цена для ВИ из PRICAT
+    /* Прайс в PRICAT указан с НДС, выручка в 1С — без НДС. Разница 100% − цена/прайс должна равняться
+       ставке налога. Больше 22% — значит отгружали дешевле прайса, то есть со скидкой. */
+    t.vatRatio=(t.viPrice&&t.price)?1-t.price/t.viPrice:null;
+    t.brand=pc?pc.brand:null;
+    t.speed=M.days?t.qty/M.days:0;
+    t.daysLeft=(t.stock!=null&&t.speed>0)?t.stock/t.speed:(t.stock!=null?Infinity:null);
+    t.inMatrix=S.matrix[t.art]?S.matrix[t.art].cls:null;
+  });
+
+  /* Коэффициент перевода РРЦ → закупочная цена. Sell-in идёт по нашей отпускной (она же «закупочная»
+     в PRICAT), sell-out у ВИ — по РРЦ, поэтому напрямую эти суммы несопоставимы. Коэффициент берём
+     из PRICAT как отношение рекомендованной цены к закупочной, взвешенно по выручке проданных SKU. */
+  if(S.cfg.rrcK){M.rrcK={v:+S.cfg.rrcK,src:"задан вручную",nn:null};}
+  else{
+    let wsum=0,w=0,nn=0;
+    arr.forEach(t=>{const pc=S.pricat[t.art];
+      if(pc&&pc.viPrice>0&&pc.retail>0&&t.rev>0){const k=pc.retail/pc.viPrice;
+        if(k>1&&k<5){wsum+=k*t.rev;w+=t.rev;nn++;}}});
+    if(w>0)M.rrcK={v:wsum/w,src:"из PRICAT, взвешенно по выручке",nn};
+    else{
+      const ks=Object.values(S.pricat).filter(p=>p.viPrice>0&&p.retail>0).map(p=>p.retail/p.viPrice)
+        .filter(k=>k>1&&k<5).sort((a,b)=>a-b);
+      M.rrcK=ks.length?{v:ks[Math.floor(ks.length/2)],src:"медиана по каталогу PRICAT",nn:ks.length}:null;
+    }
+  }
+
+  /* ABC. По выручке рассчитываем сами (накопленный вклад 80/95/100).
+     По прибыли группы НЕ рассчитываем: класс берётся из колонки «Матрица» файла «Матрица товаров» —
+     это классификация самой ВсеИнструменты.ру (A / B / C / L / X). Товары вне матрицы в разрез не попадают. */
+  abc(arr,"rev","abcRev");
+  arr.forEach(t=>{const m=S.matrix[t.art];t.abcNet=(m&&m.cls)?m.cls:null;});
+  M.noMatrix=arr.filter(t=>!t.abcNet).length;
+
+  // --- категории ---
+  const cats={};
+  arr.forEach(t=>{const c=cats[t.cat]||(cats[t.cat]={cat:t.cat,cnt:0,qty:0,rev:0,cogs:0,net:0,unknown:0});
+    c.cnt++;c.qty+=t.qty;c.rev+=t.rev;
+    if(t.cogs!=null){c.cogs+=t.cogs;c.net+=t.net;}else c.unknown++;});
+  Object.values(cats).forEach(c=>{c.margin=c.rev?c.net/c.rev:null;c.share=M.revenue?c.rev/M.revenue:0;});
+  M.cats=Object.values(cats).sort((a,b)=>b.rev-a.rev);
+
+  // --- проблемные позиции ---
+  M.loss=arr.filter(t=>t.net!=null&&t.net<0);
+  M.lossSum=M.loss.reduce((a,b)=>a+b.net,0);
+  M.crit=arr.filter(t=>t.daysLeft!=null&&isFinite(t.daysLeft)&&t.daysLeft<S.cfg.critDays&&t.qty>0);
+  M.warnSt=arr.filter(t=>t.daysLeft!=null&&isFinite(t.daysLeft)&&t.daysLeft>=S.cfg.critDays&&t.daysLeft<S.cfg.warnDays&&t.qty>0);
+  M.attention=M.loss.length+M.crit.length;
+  M.dropCand=arr.filter(t=>t.abcRev==="C"&&t.net!=null&&t.net<0&&t.qty>0);
+  M.ok=true;
+  return M;
+}
+function abc(list,field,out){
+  const s=[...list].sort((a,b)=>b[field]-a[field]);
+  const tot=s.reduce((a,b)=>a+Math.max(0,b[field]),0);
+  let acc=0;
+  s.forEach(t=>{acc+=Math.max(0,t[field]);const r=tot?acc/tot:1;
+    t[out]=r<=0.8?"A":r<=0.95?"B":"C";});
+  list.forEach(t=>{if(!t[out])t[out]="C";});
+}
+
+/* ================================================================================
+   БЛОК 6. АВТОМАТИЧЕСКИЕ ТЕКСТОВЫЕ ВЫВОДЫ
+   ================================================================================ */
+function insights(M){
+  const o=[];
+  const add=(k,ic,html)=>o.push({k,ic,html});
+
+  if(M.ret&&M.ret.docs)
+    add("warn","↩",`Возвраты: <b>${M.ret.docs}</b> ${plur(M.ret.docs,"документ","документа","документов")}
+      на <b>${money(M.ret.rev)}</b> оборота и <b>${money(M.ret.gross)}</b> валовой прибыли
+      (${f0(-M.ret.qty)} шт). Собраны в одну справочную строку «Возврат» на вкладках «Товары» и «Юнит-экономика».`);
+
+  if(M.cov.pct<0.999){
+    const p=1-M.cov.pct;
+    add(p>0.15?"warn":"info","◐",`Себестоимость известна по <b>${pct(M.cov.pct)}</b> выручки
+      (${M.cov.cntRep} товаров из отчётов, ${M.cov.cntMan} введено вручную).
+      По <b>${M.cov.cntNone}</b> товарам на <b>${money(M.cov.noneRev)}</b> выручки себестоимости нет —
+      прибыль по ним не считается вообще, а не считается нулём. Заполните их на вкладке «Юнит-экономика».`);
+  }else if(M.cov.cnt)add("ok","✓","Себестоимость известна по всем товарам периода — цифрам прибыли можно доверять полностью.");
+
+  if(M.loss.length)add("bad","▼",`В убыток продаётся <b>${M.loss.length}</b> ${plur(M.loss.length,"товар","товара","товаров")}
+    на <b>${money(-M.lossSum)}</b> потерянной прибыли. Крупнейший минус: ${esc(M.loss.sort((a,b)=>a.net-b.net)[0].name.slice(0,60))} (${money(M.loss[0].net)}).`);
+  else if(M.cov.cnt)add("ok","✓","Товаров с отрицательной чистой прибылью в периоде нет.");
+
+  const cc=M.cats.filter(c=>c.margin!=null&&c.rev>0);
+  if(cc.length>1){
+    const best=[...cc].sort((a,b)=>b.margin-a.margin)[0], worst=[...cc].sort((a,b)=>a.margin-b.margin)[0];
+    add("info","≡",`Лучшая маржа у категории <b>${esc(best.cat)}</b> — ${pct(best.margin)} при выручке ${money(best.rev)}.
+      Худшая у <b>${esc(worst.cat)}</b> — ${pct(worst.margin)}.`);
+  }
+  if(M.crit.length||M.warnSt.length)
+    add(M.crit.length?"bad":"warn","◧",`Меньше чем через ${S.cfg.critDays} дней закончится <b>${M.crit.length}</b>
+      ${plur(M.crit.length,"товар","товара","товаров")}, ещё <b>${M.warnSt.length}</b> — в пределах ${S.cfg.warnDays} дней.
+      Скорость продаж считается по фактическим продажам за ${M.days} ${plur(M.days,"день","дня","дней")} периода.`);
+  else if(Object.keys(S.pricat).length)add("ok","✓","Критичных по остаткам товаров нет: всем позициям хватает больше "+S.cfg.critDays+" дней.");
+  else add("warn","◧","Остатки не загружены — блок «Остатки» и рекомендации по поставке недоступны. Нужен файл PRICAT с колонкой «Количество остатков на складе».");
+
+  if(M.drr!=null){
+    const d=M.drr*100,lo=S.cfg.drrLo,hi=S.cfg.drrHi;
+    const verdict=d<lo?`ниже ориентира ${lo}–${hi}% — рекламный ресурс недоиспользован, есть запас на продвижение`
+      :d>hi?`выше ориентира ${lo}–${hi}% — реклама съедает больше нормы, стоит пересмотреть размещения`
+      :`в пределах ориентира ${lo}–${hi}%`;
+    add(d>hi?"bad":d<lo?"info":"ok","◇",`ДРР каталога — <b>${pct(M.drr)}</b> (${money(M.adV)} рекламы на ${money(M.revenue)} выручки), ${verdict}.`);
+  }else add("warn","◇","ДРР не рассчитан: "+esc(M.ad.reason||"нет данных о рекламе")+".");
+
+  if(M.dropCand.length){
+    const s=M.dropCand.reduce((a,b)=>a+b.net,0);
+    add("warn","✕",`<b>${M.dropCand.length}</b> ${plur(M.dropCand.length,"товар","товара","товаров")} одновременно
+      в группе C по выручке и убыточны (${money(s)}) — кандидаты на вывод из ассортимента.`);
+  }
+  // точки роста: товары с положительной юниткой, высокой маржой и остатком, но малой долей выручки
+  const growth=M.items.filter(t=>t.marginP!=null&&t.marginP>(M.margin||0)*1.3&&t.abcRev!=="A"&&t.qty>0&&(t.stock==null||t.stock>0));
+  if(growth.length){
+    const pot=growth.reduce((a,t)=>a+t.net*0.5,0);
+    add("info","▲",`Найдено <b>${growth.length}</b> точек роста: товары с маржой выше средней по каталогу,
+      но не входящие в группу A по выручке. Рост их продаж на 50% дал бы примерно <b>${money(pot)}</b> дополнительной прибыли.`);
+  }
+  if(M.bonus.missing.length)
+    add("warn","₽","Бонусы не учтены за: "+M.bonus.missing.map(esc).join(", ")+" — загрузите файл «Сумма бонусов» за этот квартал.");
+  if(M.bonus.skippedMkt>0)
+    add("info","₽",`Маркетинговый бонус <b>${money(M.bonus.skippedMkt)}</b> не вычтен отдельной строкой:
+      он является источником финансирования маркетингового плана и уже учтён через строку «Реклама». Переключается на вкладке «Данные».`);
+  return o;
+}
+function plur(k,a,b,c){k=Math.abs(Math.round(k));const d=k%100;if(d>10&&d<20)return c;
+  const e=k%10;return e===1?a:e>1&&e<5?b:c;}
+
+/* ================================================================================
+   БЛОК 7. ГРАФИКИ. Рисуем инлайновым SVG — без сторонних чарт-библиотек,
+   чтобы файл оставался самодостаточным и не зависел от доступности CDN.
+   ================================================================================ */
+function svgWaterfall(steps,w,h){
+  w=w||760;h=h||300;const pad={l:8,r:8,t:26,b:52};
+  const iw=w-pad.l-pad.r, ih=h-pad.t-pad.b, bw=iw/steps.length*0.62, gap=iw/steps.length;
+  let run=0;const pts=steps.map((s,i)=>{const from=s.total?0:run;const to=s.total?s.v:run+s.v;
+    if(!s.total)run+=s.v;else run=s.v;return {...s,from,to,i};});
+  const all=pts.flatMap(p=>[p.from,p.to]).concat([0]);
+  const mx=Math.max(...all),mn=Math.min(...all),rng=(mx-mn)||1;
+  const Y=v=>pad.t+ih-(v-mn)/rng*ih;
+  let g="";
+  pts.forEach(p=>{
+    const x=pad.l+p.i*gap+(gap-bw)/2;
+    const y1=Y(p.from),y2=Y(p.to),y=Math.min(y1,y2),hh=Math.max(2,Math.abs(y2-y1));
+    const col=p.total?"var(--acc)":(p.v>=0?"var(--ok)":"var(--bad)");
+    g+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" rx="3" fill="${col}" opacity="${p.total?1:.82}"/>`;
+    g+=`<text x="${(x+bw/2).toFixed(1)}" y="${(y-7).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--tx)">${short(p.v)}</text>`;
+    const words=p.name.split(" ");let ln=[],cur="";
+    words.forEach(wd=>{if((cur+" "+wd).trim().length>13){ln.push(cur);cur=wd;}else cur=(cur+" "+wd).trim();});
+    ln.push(cur);ln=ln.slice(0,2);
+    ln.forEach((t,k)=>{g+=`<text x="${(x+bw/2).toFixed(1)}" y="${(pad.t+ih+16+k*12).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="var(--tx2)">${esc(t)}</text>`;});
+    if(p.i<pts.length-1&&!pts[p.i+1].total){const xe=pad.l+(p.i+1)*gap+(gap-bw)/2;
+      g+=`<line x1="${(x+bw).toFixed(1)}" y1="${y2.toFixed(1)}" x2="${xe.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--line2)" stroke-dasharray="3 3"/>`;}
+  });
+  g+=`<line x1="${pad.l}" y1="${Y(0).toFixed(1)}" x2="${w-pad.r}" y2="${Y(0).toFixed(1)}" stroke="var(--line2)"/>`;
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">${g}</svg>`;
+}
+function svgDonut(parts,w){
+  w=w||230;const r=w/2-6,ir=r*0.62,cx=w/2,cy=w/2;
+  const tot=parts.reduce((a,b)=>a+Math.abs(b.v),0)||1;let a0=-Math.PI/2,g="";
+  parts.forEach(p=>{
+    const a1=a0+Math.abs(p.v)/tot*Math.PI*2;
+    const x0=cx+r*Math.cos(a0),y0=cy+r*Math.sin(a0),x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
+    const xi1=cx+ir*Math.cos(a1),yi1=cy+ir*Math.sin(a1),xi0=cx+ir*Math.cos(a0),yi0=cy+ir*Math.sin(a0);
+    const big=(a1-a0)>Math.PI?1:0;
+    g+=`<path d="M${x0} ${y0}A${r} ${r} 0 ${big} 1 ${x1} ${y1}L${xi1} ${yi1}A${ir} ${ir} 0 ${big} 0 ${xi0} ${yi0}Z" fill="${p.c}" opacity=".92"/>`;
+    a0=a1;
+  });
+  return `<svg viewBox="0 0 ${w} ${w}" style="width:${w}px;max-width:100%;height:auto">${g}</svg>`;
+}
+function svgBars(data,w,h,fmt){
+  w=w||620;h=h||220;const pad={l:8,r:8,t:18,b:44};
+  const iw=w-pad.l-pad.r,ih=h-pad.t-pad.b,gap=iw/data.length,bw=gap*0.6;
+  const mx=Math.max(1,...data.map(d=>d.v));let g="";
+  data.forEach((d,i)=>{
+    const bh=Math.max(2,d.v/mx*ih),x=pad.l+i*gap+(gap-bw)/2,y=pad.t+ih-bh;
+    g+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${d.c||"var(--acc)"}" opacity=".88"/>`;
+    g+=`<text x="${(x+bw/2).toFixed(1)}" y="${(y-6).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--tx)">${fmt?fmt(d.v):d.v}</text>`;
+    g+=`<text x="${(x+bw/2).toFixed(1)}" y="${(pad.t+ih+16).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="var(--tx2)">${esc(d.l)}</text>`;
+    if(d.l2)g+=`<text x="${(x+bw/2).toFixed(1)}" y="${(pad.t+ih+29).toFixed(1)}" text-anchor="middle" font-size="10" fill="var(--tx3)">${esc(d.l2)}</text>`;
+  });
+  g+=`<line x1="${pad.l}" y1="${pad.t+ih}" x2="${w-pad.r}" y2="${pad.t+ih}" stroke="var(--line2)"/>`;
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">${g}</svg>`;
+}
+function svgLines(series,labels,w,h){
+  w=w||760;h=h||260;const pad={l:56,r:12,t:16,b:34};
+  const iw=w-pad.l-pad.r,ih=h-pad.t-pad.b;
+  const all=series.flatMap(s=>s.v).filter(v=>isFinite(v));
+  if(!all.length)return "";
+  let mx=Math.max(...all,0),mn=Math.min(...all,0);const rng=(mx-mn)||1;
+  const X=i=>pad.l+(labels.length<2?iw/2:i/(labels.length-1)*iw);
+  const Y=v=>pad.t+ih-(v-mn)/rng*ih;
+  let g="";
+  for(let k=0;k<=4;k++){const v=mn+rng*k/4,y=Y(v);
+    g+=`<line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${w-pad.r}" y2="${y.toFixed(1)}" stroke="var(--line)"/>`;
+    g+=`<text x="${pad.l-8}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--tx3)">${short(v)}</text>`;}
+  series.forEach(s=>{
+    const d=s.v.map((v,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1)).join(" ");
+    g+=`<path d="${d}" fill="none" stroke="${s.c}" stroke-width="2" stroke-linejoin="round"/>`;
+    s.v.forEach((v,i)=>{g+=`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3.2" fill="${s.c}"/>`;});
+  });
+  labels.forEach((l,i)=>{g+=`<text x="${X(i).toFixed(1)}" y="${(h-12)}" text-anchor="middle" font-size="10" fill="var(--tx2)">${esc(l)}</text>`;});
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">${g}</svg>`;
+}
+
+/* ================================================================================
+   БЛОК 8. РЕНДЕР. Общие помощники таблиц: сортировка по любой колонке, поиск, фильтры.
+   ================================================================================ */
+const T={}; // состояние таблиц: {sort, dir, q, cat, srcFilter}
+function tstate(id,def){return T[id]||(T[id]={sort:def||"rev",dir:-1,q:"",cat:"",src:"",exp:null,art:"",artOpen:false});}
+function sortRows(rows,st){
+  const k=st.sort,d=st.dir;
+  return [...rows].sort((a,b)=>{
+    let x=a[k],y=b[k];
+    if(x==null&&y==null)return 0; if(x==null)return 1; if(y==null)return -1;
+    if(typeof x==="string")return d*x.localeCompare(y,"ru");
+    return d*(x-y);
+  });
+}
+function th(id,key,label,tip){
+  const st=tstate(id);const on=st.sort===key;
+  return `<th data-tb="${id}" data-k="${key}"${tip?' title="'+esc(tip)+'"':""}>${esc(label)}${on?'<span class="ar">'+(st.dir<0?"▾":"▴")+"</span>":""}</th>`;
+}
+/* Заголовок «Артикул» с точечным фильтром: клик по значку раскрывает поле ввода прямо в шапке столбца. */
+function thArt(id){
+  const st=tstate(id);const on=st.sort==="art";
+  return `<th style="min-width:130px">
+    <span data-tb="${id}" data-k="art" style="cursor:pointer">Артикул${on?'<span class="ar">'+(st.dir<0?"▾":"▴")+"</span>":""}</span>
+    <span data-artopen="${id}" title="Фильтр по конкретному артикулу"
+      style="cursor:pointer;margin-left:6px;color:${st.art?"var(--acc)":"var(--tx3)"}">⌕</span>
+    ${st.artOpen||st.art?`<div style="margin-top:5px"><input class="costin" style="width:118px;text-align:left"
+      data-tool="art" data-tb="${id}" placeholder="введите артикул" value="${esc(st.art)}"></div>`:""}
+  </th>`;
+}
+
+function bindTables(root){
+  root.querySelectorAll("[data-artopen]").forEach(el=>{
+    el.onclick=e=>{e.stopPropagation();const st=tstate(el.dataset.artopen);
+      st.artOpen=!st.artOpen; if(!st.artOpen)st.art="";
+      renderAll();
+      const inp=document.querySelector(`[data-tool="art"][data-tb="${el.dataset.artopen}"]`);
+      if(inp)inp.focus();};
+  });
+  root.querySelectorAll("[data-k]").forEach(el=>{
+    el.onclick=()=>{const st=tstate(el.dataset.tb);
+      if(st.sort===el.dataset.k)st.dir*=-1;else{st.sort=el.dataset.k;st.dir=-1;}
+      renderAll();};
+  });
+  root.querySelectorAll("[data-costart]").forEach(el=>{
+    el.onchange=()=>{
+      const a=el.dataset.costart,v=el.value.trim().replace(",",".");
+      if(v===""){delete S.manualCost[a];}else{const x=parseFloat(v);
+        if(!isFinite(x)||x<0){toast("Себестоимость должна быть положительным числом","err");return;}
+        S.manualCost[a]=x;}
+      save();renderAll();   // мгновенный пересчёт юнитки и всех зависимых метрик
+    };
+    el.onkeydown=e=>{if(e.key==="Enter")el.blur();};
+  });
+  root.querySelectorAll("[data-exp]").forEach(el=>{
+    el.onclick=()=>{const st=tstate(el.dataset.tb);
+      st.exp=st.exp===el.dataset.exp?null:el.dataset.exp;renderAll();};
+  });
+}
+function toolbar(id,cats,withSrc){
+  const st=tstate(id);
+  return `<div class="tools">
+    <input class="inp" data-tool="q" data-tb="${id}" placeholder="Поиск по названию или артикулу" value="${esc(st.q)}">
+    <select class="sel" data-tool="cat" data-tb="${id}">
+      <option value="">Все категории</option>
+      ${cats.map(c=>`<option value="${esc(c)}"${st.cat===c?" selected":""}>${esc(c)}</option>`).join("")}
+    </select>
+    ${withSrc?`<select class="sel" data-tool="src" data-tb="${id}">
+      <option value="">Любой источник себестоимости</option>
+      <option value="report"${st.src==="report"?" selected":""}>Из отчёта</option>
+      <option value="manual"${st.src==="manual"?" selected":""}>Вручную</option>
+      <option value="none"${st.src==="none"?" selected":""}>Не заполнено</option></select>`:""}
+    <span class="mut small" data-cnt="${id}"></span>
+  </div>`;
+}
+function bindTools(root){
+  root.querySelectorAll("[data-tool]").forEach(el=>{
+    const st=tstate(el.dataset.tb),k=el.dataset.tool;
+    if(el.tagName==="INPUT"){
+      el.oninput=()=>{st[k]=el.value;clearTimeout(el._t);el._t=setTimeout(()=>{
+        const p=el.selectionStart,tb=el.dataset.tb;renderAll();
+        const nel=document.querySelector(`[data-tool="${k}"][data-tb="${tb}"]`);
+        if(nel){nel.focus();nel.setSelectionRange(p,p);}},260);};
+    }else el.onchange=()=>{st[k]=el.value;renderAll();};
+  });
+}
+function filterRows(rows,id){
+  const st=tstate(id);const q=st.q.trim().toLowerCase();
+  const a=(st.art||"").trim().toUpperCase();
+  if(a){
+    // сначала точное совпадение, и только если его нет — совпадение по началу артикула
+    const exact=rows.filter(t=>String(t.art).toUpperCase()===a);
+    rows=exact.length?exact:rows.filter(t=>String(t.art).toUpperCase().startsWith(a));
+  }
+  return rows.filter(t=>{
+    if(st.cat&&t.cat!==st.cat)return false;
+    if(st.src&&t.ucSrc!==st.src)return false;
+    if(q&&!((t.name||"").toLowerCase().includes(q)||(t.art||"").toLowerCase().includes(q)))return false;
+    return true;
+  });
+}
+/* НДС по товару: до ставки включительно — норма, выше — отгрузка со скидкой к прайсу. */
+function vatCls(v){
+  if(v==null)return "";
+  const rate=S.cfg.vat-1;                 // 0.22
+  return v>rate+0.005?"neg":"pos";
+}
+const srcTag=t=>t.ucSrc==="manual"?'<span class="tag warn">вручную</span>'
+  :t.ucSrc==="report"?'<span class="tag ok">из отчёта</span>'
+  :'<span class="tag bad">нет данных</span>';
+const abcTag=v=>`<span class="tag ${v==="A"?"acc":"n"}">${v}</span>`;
+
+/* ---------- KPI-строка ---------- */
+function renderKpis(M){
+  const el=document.getElementById("kpis");
+  if(!M.ok){el.innerHTML=`<div class="kpi" style="grid-column:1/-1"><div class="lab">Данных нет</div>
+    <div class="sub">Загрузите отчёты — кнопка «Загрузить отчёты» вверху справа или вкладка «Данные и настройки».</div></div>`;return;}
+  const covTag=M.cov.pct>=0.999?'<span class="tag ok">100%</span>'
+    :`<span class="tag ${M.cov.pct>0.85?"warn":"bad"}">${pct(M.cov.pct,0)} известно</span>`;
+  const netTag=M.net>=0?'<span class="tag ok">операционно прибыльно</span>':'<span class="tag bad">операционный убыток</span>';
+  const drrTag=M.drr==null?'<span class="tag n">нет данных</span>'
+    :M.drr*100>S.cfg.drrHi?'<span class="tag bad">выше нормы</span>'
+    :M.drr*100<S.cfg.drrLo?'<span class="tag acc">ниже нормы</span>':'<span class="tag ok">в норме</span>';
+  el.innerHTML=`
+  <div class="kpi"><div class="lab">Выручка · ${esc(M.label)}</div><div class="val">${money(M.revenue)}</div>
+    <div class="sub">${f0(M.qty)} шт · ${M.items.length} SKU · ${M.days} дн</div></div>
+  <div class="kpi"><div class="lab">Себестоимость</div><div class="val">${money(M.cogs)}</div>
+    <div class="sub">${pct(M.cogsPct)} от выручки · ${covTag}</div></div>
+  <div class="kpi"><div class="lab">Чистая прибыль</div><div class="val ${cls(M.net)}">${money(M.net)}</div>
+    <div class="sub">${netTag}</div></div>
+  <div class="kpi"><div class="lab">Маржинальность / ROI</div><div class="val ${cls(M.margin)}">${pct(M.margin)}</div>
+    <div class="sub">ROI ${pct(M.roi)} · валовая ${pct(M.revenue?M.grossFull/M.revenue:null)}</div></div>
+  <div class="kpi"><div class="lab">Реклама и ДРР</div><div class="val">${M.ad.v==null?"—":money(M.adV)}</div>
+    <div class="sub">ДРР ${pct(M.drr)} ${drrTag}</div></div>
+  <div class="kpi"><div class="lab">Бонусы покупателю</div><div class="val">${money(M.bnV)}</div>
+    <div class="sub">${pct(M.revenue?M.bnV/M.revenue:null)} от выручки</div></div>
+  <div class="kpi"><div class="lab">Требуют внимания</div><div class="val ${M.attention?"neg":"pos"}">${M.attention}</div>
+    <div class="sub">${M.loss.length} убыточных · ${M.crit.length} критичных по остатку</div></div>`;
+}
+
+function docsLabel(M){
+  const e=Object.entries(M.docs||{});
+  if(!e.length)return "нет";
+  return e.map(([k,v])=>`${v} × ${esc(k)}`).join(" · ");
+}
+
+/* ---------- Вкладка «Обзор» ---------- */
+function renderOverview(M){
+  const el=document.getElementById("tab-ov");
+  if(!M.ok){el.innerHTML=emptyState();return;}
+  const ins=insights(M);
+  const steps=[{name:"Выручка",v:M.revenue},{name:"Себестоимость",v:-M.cogs}];
+  Object.entries(M.bonus.items).forEach(([k,v])=>steps.push({name:k.replace(/^Отказ за возмещение затрат на т.*/,"Возмещение затрат"),v:-v}));
+  if(M.adV)steps.push({name:"Реклама",v:-M.adV});
+  if(M.tax)steps.push({name:"Налог",v:-M.tax});
+  steps.push({name:"Чистая прибыль",v:M.net,total:true});
+
+  /* Классы берём из файла «Матрица товаров» — это классификация ВсеИнструменты.ру, а не наш расчёт. */
+  const COLS={A:"var(--acc)",B:"var(--acc2)",C:"var(--line2)",L:"var(--info)",X:"var(--ok)"};
+  const abcNet={};M.items.filter(t=>t.net!=null&&t.abcNet).forEach(t=>abcNet[t.abcNet]=(abcNet[t.abcNet]||0)+Math.max(0,t.net));
+  const donut=Object.keys(abcNet).sort().map(k=>({l:k,v:abcNet[k],c:COLS[k]||"var(--panel2)"}));
+  const dTot=donut.reduce((a,b)=>a+b.v,0)||1;
+
+  const withNet=M.items.filter(t=>t.net!=null);
+  const top=[...withNet].filter(t=>t.qty>0).sort((a,b)=>b.net-a.net).slice(0,15);
+  // в антитоп не берём позиции с отрицательным количеством: это чистые возвраты, а не убыточные продажи
+  const bot=[...withNet].filter(t=>t.qty>0).sort((a,b)=>a.net-b.net).slice(0,15);
+  const retOnly=withNet.filter(t=>t.qty<=0).length;
+
+  el.innerHTML=`
+  <div class="card">
+    <h3>Автоматические выводы · ${esc(M.label)}</h3>
+    <p class="hint">${esc(M.from)} — ${esc(M.to)} · документы: ${docsLabel(M)}</p>
+    ${ins.map(i=>`<div class="ins ${i.k}"><span class="ic">${i.ic}</span><div>${i.html}</div></div>`).join("")}
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Нитка прибыли</h3>
+      <p class="hint">Выручка без НДС → себестоимость → бонусы покупателю → реклама${S.cfg.taxRate?" → налог":""} → чистая прибыль</p>
+      ${svgWaterfall(steps)}
+      <div class="tw" style="margin-top:12px"><table><tbody>
+        <tr><td>Выручка без НДС</td><td class="num">${money(M.revenue)}</td><td class="num mut">100%</td></tr>
+        <tr><td>− Себестоимость</td><td class="num neg">−${money(M.cogs)}</td><td class="num mut">${pct(M.cogsPct)}</td></tr>
+        <tr><td><b>= Валовая прибыль</b></td><td class="num"><b>${money(M.grossFull)}</b></td>
+          <td class="num mut">${pct(M.revenue?M.grossFull/M.revenue:null)}</td></tr>
+        ${Object.entries(M.bonus.items).map(([k,v])=>`<tr><td class="mut">− ${esc(k)}</td>
+          <td class="num neg">−${money(v)}</td><td class="num mut">${pct(M.revenue?v/M.revenue:null,2)}</td></tr>`).join("")}
+        <tr><td>− Реклама (маркетинговый план)</td><td class="num neg">−${money(M.adV)}</td>
+          <td class="num mut">${pct(M.drr)}</td></tr>
+        ${M.tax?`<tr><td>− Налог на прибыль</td><td class="num neg">−${money(M.tax)}</td>
+          <td class="num mut">${pct(M.revenue?M.tax/M.revenue:null)}</td></tr>`:""}
+        <tr><td><b>= Чистая прибыль</b></td><td class="num ${cls(M.net)}"><b>${money(M.net)}</b></td>
+          <td class="num ${cls(M.margin)}"><b>${pct(M.margin)}</b></td></tr>
+      </tbody></table></div>
+      <p class="hint" style="margin-top:8px">Проверка: ${short(M.revenue)} − ${short(M.cogs)} − ${short(M.bnV)} − ${short(M.adV)}${M.tax?" − "+short(M.tax):""} = <b>${short(M.net)}</b>.
+        Бонусы в KPI показаны одной суммой, здесь — построчно${M.bonus.skippedMkt>0?`; маркетинговый бонус ${money(M.bonus.skippedMkt)} в вычет не входит, он финансирует строку «Реклама»`:""}.</p>
+      ${M.cov.pct<0.999?`<p class="hint" style="margin-top:8px">Себестоимость учтена только по товарам, где она известна (${pct(M.cov.pct)} выручки). Оставшаяся выручка попадает в прибыль без вычета — это завышает результат, пока не заполнены пропуски.</p>`:""}
+    </div>
+    <div class="card">
+      <h3>Тренд по сохранённым срезам</h3>
+      <p class="hint">График наполняется только тогда, когда вы нажимаете «Сохранить срез» вверху. Сам по себе он не растёт: это ваша ручная история наблюдений, а не пересчёт из отчётов.</p>
+      ${S.snaps.length>1?svgLines([
+        {v:S.snaps.map(s=>s.revenue),c:"var(--acc)"},
+        {v:S.snaps.map(s=>s.net),c:"var(--ok)"}],S.snaps.map(s=>s.label),740,240)
+        +`<div class="legend"><span><i style="background:var(--acc)"></i>Выручка</span><span><i style="background:var(--ok)"></i>Чистая прибыль</span></div>`
+        :`<div class="empty">Сохранено срезов: ${S.snaps.length}. Нужно минимум два, чтобы построить линию.</div>`}
+      ${S.snaps.length?`<div class="tw" style="max-height:210px;margin-top:12px"><table><thead><tr>
+        <th class="nos">Срез</th><th class="nos">Выручка</th><th class="nos">Прибыль</th><th class="nos">Маржа</th><th class="nos">ДРР</th><th class="nos"></th></tr></thead>
+        <tbody>${S.snaps.map((s,i)=>`<tr><td>${esc(s.label)}<div class="xs mut3">${esc(s.ts)}</div></td>
+        <td class="num">${short(s.revenue)}</td><td class="num ${cls(s.net)}">${short(s.net)}</td>
+        <td class="num">${pct(s.margin)}</td><td class="num">${pct(s.drr)}</td>
+        <td><span class="x" style="cursor:pointer;color:var(--tx3)" data-delsnap="${i}">✕</span></td></tr>`).join("")}</tbody></table></div>`:""}
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Прибыль по категориям</h3>
+      <p class="hint">Категория выводится из префикса артикула: ни в одной выгрузке товарной группы нет.</p>
+      <div class="tw" style="max-height:400px"><table><thead><tr>
+        <th class="nos">Категория</th><th class="nos">SKU</th><th class="nos">Выручка</th>
+        <th class="nos">Прибыль</th><th class="nos">Маржа</th><th class="nos">Доля</th></tr></thead>
+        <tbody>${M.cats.map(c=>`<tr><td class="nm">${esc(c.cat)}${c.unknown?` <span class="tag bad" title="без себестоимости">${c.unknown}?</span>`:""}</td>
+          <td class="num">${c.cnt}</td><td class="num">${short(c.rev)}</td>
+          <td class="num ${cls(c.net)}">${short(c.net)}</td><td class="num ${cls(c.margin)}">${pct(c.margin)}</td>
+          <td class="num mut">${pct(c.share,0)}</td></tr>`).join("")}</tbody>
+        <tfoot><tr><td>Итого</td><td class="num">${M.items.length}</td><td class="num">${short(M.revenue)}</td>
+          <td class="num ${cls(M.net)}">${short(M.net)}</td><td class="num">${pct(M.margin)}</td><td class="num">100%</td></tr></tfoot>
+      </table></div>
+    </div>
+    <div class="card">
+      <h3>ABC по чистой прибыли</h3>
+      <p class="hint">Классы берутся из файла «Матрица товаров» — это классификация ВсеИнструменты.ру, а не наш расчёт по вкладу.
+        Показана сумма чистой прибыли по каждому классу.</p>
+      <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+        ${svgDonut(donut,210)}
+        <div style="flex:1;min-width:190px">
+          ${!donut.length?`<div class="empty">Нет данных: загрузите файл «Матрица товаров»</div>`:""}
+          ${donut.map(d=>{const cnt=withNet.filter(t=>t.abcNet===d.l).length;
+            return `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)">
+            <span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${d.c};margin-right:8px"></i>Класс ${d.l}</span>
+            <span class="num">${short(d.v)} · ${pct(d.v/dTot,0)} · ${cnt} SKU</span></div>`;}).join("")}
+          <p class="hint" style="margin-top:10px">Не учтено: без себестоимости — ${M.cov.cntNone}, вне матрицы ВИ — ${M.noMatrix}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h3>Топ-15 по прибыли</h3>${miniList(top,"pos")}</div>
+    <div class="card"><h3>Антитоп-15 по прибыли</h3>
+      <p class="hint">Только позиции с положительными продажами. Товары, по которым за период были одни возвраты
+        (${retOnly} ${plur(retOnly,"позиция","позиции","позиций")}), в список не попадают — их минус означает возврат, а не убыточную продажу.</p>
+      ${miniList(bot,"neg")}</div>
+  </div>`;
+  el.querySelectorAll("[data-delsnap]").forEach(b=>b.onclick=()=>{
+    S.snaps.splice(+b.dataset.delsnap,1);save();renderAll();});
+}
+function miniList(list,k){
+  if(!list.length)return `<div class="empty">Нет товаров с рассчитанной прибылью</div>`;
+  return `<div class="tw" style="max-height:430px"><table><thead><tr>
+    <th class="nos">Товар</th><th class="nos">Шт</th><th class="nos">Выручка</th><th class="nos">Прибыль</th><th class="nos">Маржа</th></tr></thead>
+    <tbody>${list.map(t=>`<tr><td class="nm"><span class="art">${esc(t.art)}</span> ${esc(t.name.slice(0,70))}</td>
+      <td class="num">${f0(t.qty)}</td><td class="num">${short(t.rev)}</td>
+      <td class="num ${k}">${short(t.net)}</td><td class="num ${cls(t.marginP)}">${pct(t.marginP)}</td></tr>`).join("")}
+    </tbody></table></div>`;
+}
+
+/* ---------- Вкладка «План-факт» ----------
+   План берётся из годового файла «План оборот / План маржа», ручной ввод его переопределяет.
+   Маржа здесь ВАЛОВАЯ: выручка минус себестоимость, без вычета рекламы и бонусов —
+   именно так построен плановый файл, иначе план и факт сравнивались бы в разных базах. */
+function planFor(key){
+  const manual=S.plan[key]||{};
+  const y=key.slice(0,4), m=+key.slice(5,7)-1;
+  const pf=(S.planFile&&String(S.planFile.year)===y)?S.planFile:null;
+  const rev=n(manual.rev)!=null?n(manual.rev):(pf?pf.rev[m]:null);
+  const prof=n(manual.profit)!=null?n(manual.profit):(pf?pf.marg[m]:null);
+  return {rev,prof,src:(n(manual.rev)!=null?"вручную":pf?"из файла плана":null),manual,pf};
+}
+/* Факт для этой вкладки: валовая прибыль, без рекламы и бонусов. */
+function grossOf(p){
+  return (p.items||[]).reduce((a,t)=>a+t.rev,0)-(p.items||[]).reduce((a,t)=>{
+    const uc=unitCost(t.art,{qty:t.qty,cost:t.cost});return a+(uc.v!=null?uc.v*t.qty:0);},0);
+}
+
+function renderPlanFact(M){
+  const el=document.getElementById("tab-pf");
+  if(!M.ok){el.innerHTML=emptyState();return;}
+  const allKeys=Object.keys(S.periods).sort();
+  const isAll=S.cur==="ALL";
+
+  /* ---- режим «Все периоды»: помесячный план-факт ---- */
+  if(isAll){
+    const rows=allKeys.map(k=>{
+      const p=S.periods[k],pl=planFor(k);
+      const fact=sumRev(p), gross=grossOf(p);
+      return {k,label:MONTHS_C[+k.slice(5,7)-1].slice(0,3),full:p.label,
+        planRev:pl.rev,fact,planProf:pl.prof,gross,
+        doneRev:pl.rev?fact/pl.rev:null, doneProf:pl.prof?gross/pl.prof:null};
+    });
+    const sum=(f)=>rows.reduce((a,r)=>a+(r[f]||0),0);
+    const yearPlan=S.planFile?S.planFile.rev.reduce((a,b)=>a+(b||0),0):null;
+    const yearMarg=S.planFile?S.planFile.marg.reduce((a,b)=>a+(b||0),0):null;
+    el.innerHTML=`
+    ${!S.planFile?`<div class="card"><div class="ins warn"><span class="ic">◐</span><div>
+      Годовой план не загружен. Нужен файл со строками «План оборот ГГГГ» и «План маржа ГГГГ» и колонками-месяцами —
+      загрузите его кнопкой «Загрузить отчёты», и плановые значения проставятся по каждому месяцу автоматически.</div></div></div>`:""}
+    <div class="card">
+      <h3>Оборот по месяцам: план и факт</h3>
+      <p class="hint">Оранжевым — план из файла${S.planFile?" на "+esc(S.planFile.year)+" год":""}, синим — факт по загруженным отчётам 1С.
+        В скобках под фактом — процент выполнения плана месяца. Значения в тысячах рублей.
+        Месяцы без загруженного отчёта показывают нулевой факт: это отсутствие данных, а не провал плана.</p>
+      ${svgGrouped(rows.map(r=>r.label),[
+        {n:"План",v:rows.map(r=>Math.round((r.planRev||0)/1000)),c:"var(--acc)",
+         lab:rows.map(r=>r.planRev?f0(r.planRev/1000):"—")},
+        {n:"Факт",v:rows.map(r=>Math.round(r.fact/1000)),c:"var(--info)",
+         lab:rows.map(r=>f0(r.fact/1000)+(r.doneRev!=null?"\n("+pct(r.doneRev,0)+")":""))}],880,300)}
+      <div class="legend"><span><i style="background:var(--acc)"></i>План, тыс ₽</span>
+        <span><i style="background:var(--info)"></i>Факт, тыс ₽</span></div>
+    </div>
+
+    <div class="card">
+      <h3>Валовая маржа по месяцам: план и факт</h3>
+      <p class="hint">Факт — выручка минус себестоимость, без вычета рекламы и бонусов: плановый файл построен именно в этой базе.
+        В скобках под фактом — процент выполнения. Значения в тысячах рублей.</p>
+      ${svgGrouped(rows.map(r=>r.label),[
+        {n:"План",v:rows.map(r=>Math.round((r.planProf||0)/1000)),c:"var(--acc)",
+         lab:rows.map(r=>r.planProf?f0(r.planProf/1000):"—")},
+        {n:"Факт",v:rows.map(r=>Math.round(r.gross/1000)),c:"var(--ok)",
+         lab:rows.map(r=>f0(r.gross/1000)+(r.doneProf!=null?"\n("+pct(r.doneProf,0)+")":""))}],880,300)}
+      <div class="legend"><span><i style="background:var(--acc)"></i>План, тыс ₽</span>
+        <span><i style="background:var(--ok)"></i>Факт, тыс ₽</span></div>
+    </div>
+
+    <div class="card">
+      <h3>Достижение по месяцам</h3>
+      <div class="tw"><table><thead><tr>
+        <th class="nos">Месяц</th><th class="nos">План оборота</th><th class="nos">Факт оборота</th>
+        <th class="nos">Выполнение</th><th class="nos">Отклонение</th>
+        <th class="nos">План маржи</th><th class="nos">Факт маржи</th><th class="nos">Выполнение</th>
+        <th class="nos">Маржа, %</th><th class="nos">Итог</th></tr></thead>
+        <tbody>${rows.map(r=>`<tr>
+          <td>${esc(r.full)}</td>
+          <td class="num">${r.planRev?short(r.planRev):"—"}</td>
+          <td class="num">${short(r.fact)}</td>
+          <td class="num ${r.doneRev==null?"":r.doneRev>=1?"pos":"neg"}">${r.doneRev==null?"—":pct(r.doneRev,0)}</td>
+          <td class="num ${r.planRev?cls(r.fact-r.planRev):""}">${r.planRev?(r.fact-r.planRev>0?"+":"")+short(r.fact-r.planRev):"—"}</td>
+          <td class="num">${r.planProf?short(r.planProf):"—"}</td>
+          <td class="num">${short(r.gross)}</td>
+          <td class="num ${r.doneProf==null?"":r.doneProf>=1?"pos":"neg"}">${r.doneProf==null?"—":pct(r.doneProf,0)}</td>
+          <td class="num mut">${pct(r.fact?r.gross/r.fact:null)}</td>
+          <td>${r.doneRev==null?'<span class="tag n">нет плана</span>'
+            :r.doneRev>=1?'<span class="tag ok">достигнут</span>'
+            :r.doneRev>=0.9?'<span class="tag warn">почти</span>':'<span class="tag bad">не достигнут</span>'}</td></tr>`).join("")}
+        </tbody>
+        <tfoot><tr><td>Итого за загруженные месяцы</td>
+          <td class="num">${short(sum("planRev"))}</td><td class="num">${short(sum("fact"))}</td>
+          <td class="num ${sum("planRev")&&sum("fact")>=sum("planRev")?"pos":"neg"}">${sum("planRev")?pct(sum("fact")/sum("planRev"),0):"—"}</td>
+          <td class="num ${cls(sum("fact")-sum("planRev"))}">${sum("planRev")?short(sum("fact")-sum("planRev")):"—"}</td>
+          <td class="num">${short(sum("planProf"))}</td><td class="num">${short(sum("gross"))}</td>
+          <td class="num ${sum("planProf")&&sum("gross")>=sum("planProf")?"pos":"neg"}">${sum("planProf")?pct(sum("gross")/sum("planProf"),0):"—"}</td>
+          <td class="num">${pct(sum("fact")?sum("gross")/sum("fact"):null)}</td><td></td></tr></tfoot>
+      </table></div>
+      ${yearPlan?`<p class="hint" style="margin-top:10px">Годовой план: оборот ${money(yearPlan)}, валовая маржа ${money(yearMarg)}.
+        Загружено ${rows.length} ${plur(rows.length,"месяц","месяца","месяцев")} — это ${pct(sum("fact")/yearPlan,0)} годового оборота
+        и ${pct(sum("gross")/yearMarg,0)} годовой маржи.</p>`:""}
+    </div>`;
+    return;
+  }
+
+  /* ---- режим одного месяца ---- */
+  const planKey=S.cur;
+  const pl=planFor(planKey);
+  const now=new Date();
+  const py=+planKey.slice(0,4),pm=+planKey.slice(5,7);
+  const dim=new Date(py,pm,0).getDate();
+  const sameMonth=(now.getFullYear()===py&&now.getMonth()+1===pm);
+  const isPast=(py<now.getFullYear())||(py===now.getFullYear()&&pm<now.getMonth()+1);
+  const elapsed=sameMonth?now.getDate():(isPast?dim:0);
+  const pace=elapsed/dim;
+
+  const factGross=M.grossFull;                 // без рекламы и бонусов
+  const planRev=pl.rev, planProfit=pl.prof;
+  const avgPrice=M.qty?M.revenue/M.qty:null;
+  const planQty=planRev&&avgPrice?planRev/avgPrice:null;
+  const perDay=M.days?M.revenue/M.days:0;
+  const daysLeft=Math.max(0,dim-elapsed);
+  const need=planRev?Math.max(0,planRev-M.revenue):0;
+  const needPerDay=daysLeft>0?need/daysLeft:null;
+
+  el.innerHTML=`
+  <div class="card">
+    <h3>План на ${esc(MONTHS_C[pm-1]+" "+py)}</h3>
+    <p class="hint">Плановые значения подставляются из годового файла${pl.src?" ("+esc(pl.src)+")":""}; введённое вручную число его переопределяет и хранится в браузере.
+      Маржа на этой вкладке — <b>валовая</b>: выручка минус себестоимость, без вычета рекламы и бонусов, потому что плановый файл построен в этой же базе.</p>
+    <div class="grid3">
+      <div><div class="lab small mut">Плановый оборот, ₽</div>
+        <input class="inp" type="number" id="planRev" value="${pl.manual.rev||""}" placeholder="${planRev?f0(planRev)+" — из файла плана":"нет плана"}"></div>
+      <div><div class="lab small mut">Плановая валовая маржа, ₽</div>
+        <input class="inp" type="number" id="planProfit" value="${pl.manual.profit||""}" placeholder="${planProfit?f0(planProfit)+" — из файла плана":"нет плана"}"></div>
+      <div><div class="lab small mut">План по количеству, шт (расчётный)</div>
+        <input class="inp" value="${planQty?f0(planQty)+" шт при средней цене "+f0(avgPrice)+" ₽":"— нужен плановый оборот"}" disabled></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Выполнение</h3>
+    <p class="hint">Метка на полосе — ожидаемый процент выполнения на сегодня (${elapsed} из ${dim} дней месяца = ${pct(pace,0)}).</p>
+    ${progressBlock("Оборот",M.revenue,planRev,pace,money)}
+    ${progressBlock("Валовая маржа",factGross,planProfit,pace,money)}
+    ${planQty?progressBlock("Количество, шт",M.qty,planQty,pace,f0):""}
+    <div class="grid3" style="margin-top:14px">
+      <div><div class="lab small mut">Плановая маржинальность</div>
+        <div class="num" style="font-size:20px">${pct(planRev&&planProfit?planProfit/planRev:null)}</div></div>
+      <div><div class="lab small mut">Фактическая маржинальность</div>
+        <div class="num" style="font-size:20px;color:${(planRev&&planProfit&&M.revenue&&factGross/M.revenue>=planProfit/planRev)?"var(--ok)":"var(--warn)"}">
+          ${pct(M.revenue?factGross/M.revenue:null)}</div></div>
+      <div><div class="lab small mut">Справочно: чистая прибыль</div>
+        <div class="num ${cls(M.net)}" style="font-size:20px">${money(M.net)}</div>
+        <div class="small mut">после рекламы ${money(M.adV)} и бонусов ${money(M.bnV)}</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Нужный темп</h3>
+    ${planRev?`<div class="grid3">
+      <div><div class="lab small mut">Средний оборот в день (факт)</div><div class="num" style="font-size:22px">${money(perDay)}</div>
+        <div class="small mut">за ${M.days} ${plur(M.days,"день","дня","дней")} загруженных данных</div></div>
+      <div><div class="lab small mut">Нужно в день до конца месяца</div>
+        <div class="num" style="font-size:22px;color:${needPerDay==null?"var(--tx2)":needPerDay>perDay?"var(--bad)":"var(--ok)"}">
+          ${needPerDay==null?"—":money(needPerDay)}</div>
+        <div class="small mut">${daysLeft} ${plur(daysLeft,"день","дня","дней")} осталось · нужно ещё ${money(need)}</div></div>
+      <div><div class="lab small mut">Сравнение</div>
+        <div style="font-size:15px;margin-top:6px">${needPerDay==null?'<span class="tag ok">План уже выполнен</span>'
+          :needPerDay>perDay?`<span class="tag bad">темп нужно поднять на ${pct(needPerDay/perDay-1,0)}</span>`
+          :`<span class="tag ok">текущего темпа хватает с запасом ${pct(1-needPerDay/Math.max(perDay,1),0)}</span>`}</div></div>
+    </div>`:`<div class="empty">Загрузите файл годового плана или задайте плановый оборот вручную.</div>`}
+  </div>
+
+  <div class="card">
+    <h3>План по категориям</h3>
+    <p class="hint">Необязательно. Факт — валовая маржа категории, чтобы база совпадала с верхними блоками.</p>
+    <div class="tw" style="max-height:440px"><table><thead><tr>
+      <th class="nos">Категория</th><th class="nos">План оборота, ₽</th><th class="nos">Факт</th>
+      <th class="nos">Выполнение</th><th class="nos">Темп</th></tr></thead>
+      <tbody>${M.cats.map(c=>{const cp=n((pl.manual.cats||{})[c.cat]);
+        const r=cp?c.rev/cp:null;
+        return `<tr><td class="nm">${esc(c.cat)}</td>
+        <td><input class="costin" style="width:130px" type="number" data-catplan="${esc(c.cat)}" value="${(pl.manual.cats||{})[c.cat]||""}"></td>
+        <td class="num">${short(c.rev)}</td>
+        <td class="num ${r==null?"":r>=pace?"pos":"neg"}">${r==null?"—":pct(r,0)}</td>
+        <td>${r==null?"":paceTag(r,pace)}</td></tr>`;}).join("")}
+      </tbody></table></div>
+  </div>`;
+
+  const rv=el.querySelector("#planRev"),pp=el.querySelector("#planProfit");
+  const setPlan=()=>{S.plan[planKey]={rev:rv.value,profit:pp.value,cats:(S.plan[planKey]||{}).cats||{}};save();renderAll();};
+  if(rv)rv.onchange=setPlan; if(pp)pp.onchange=setPlan;
+  el.querySelectorAll("[data-catplan]").forEach(i=>i.onchange=()=>{
+    const p=S.plan[planKey]||(S.plan[planKey]={rev:"",profit:"",cats:{}});p.cats=p.cats||{};
+    if(i.value==="")delete p.cats[i.dataset.catplan];else p.cats[i.dataset.catplan]=i.value;
+    save();renderAll();});
+}
+function paceTag(r,pace){
+  if(r>=pace)return '<span class="tag ok">идёте по графику</span>';
+  if(r>=pace*0.85)return '<span class="tag warn">немного отстаёте</span>';
+  return '<span class="tag bad">сильно отстаёте</span>';
+}
+function progressBlock(label,fact,plan,pace,fmt){
+  if(!plan)return `<div class="pf"><div class="top"><b>${esc(label)}</b><span class="mut">план не задан</span></div>
+    <div class="bar"></div></div>`;
+  const r=fact/plan;
+  return `<div class="pf">
+    <div class="top"><b>${esc(label)}</b>
+      <span>${fmt(fact)} из ${fmt(plan)} · <b class="${r>=pace?"pos":"neg"}">${pct(r,0)}</b> ${paceTag(r,pace)}</span></div>
+    <div class="bar"><i style="width:${Math.min(100,Math.max(0,r*100))}%;background:${r>=pace?"var(--ok)":r>=pace*0.85?"var(--warn)":"var(--bad)"}"></i>
+      <span class="pace" style="left:${Math.min(99.5,pace*100)}%" title="ожидаемое выполнение на сегодня"></span></div>
+  </div>`;
+}
+
+function retBlock(M){
+  /* Одна сводная строка «Возврат»: подытоги документов с отрицательным оборотом или прибылью.
+     Показывается справочно и в итоги не входит — суммы этих документов уже сидят в строках номенклатуры. */
+  const r=M.ret;
+  if(!r||!r.docs)return "";
+  return `<div class="card" style="border-color:var(--warn);margin-bottom:14px">
+    <h3>Возврат — сводная строка</h3>
+    <p class="hint">Документы с отрицательным оборотом или прибылью объединены в одну строку.
+      Раньше они попадали в таблицы как отдельные псевдотовары «NOART: Заказ клиента …» и завышали выручку.
+      Строка справочная: сами суммы уже учтены в строках номенклатуры внутри этих документов.</p>
+    <div class="tw"><table><thead><tr><th class="nos">Строка</th><th class="nos">Документов</th>
+      <th class="nos">Штук</th><th class="nos">Оборот</th><th class="nos">Себестоимость</th><th class="nos">Валовая прибыль</th></tr></thead>
+      <tbody><tr><td><b>Возврат</b></td><td class="num">${r.docs}</td><td class="num neg">${f0(r.qty)}</td>
+        <td class="num neg">${f0(r.rev)}</td><td class="num">${f0(r.cost)}</td><td class="num neg">${f0(r.gross)}</td></tr></tbody></table></div>
+    <details style="margin-top:10px"><summary class="small mut" style="cursor:pointer">Показать документы (${r.list.length})</summary>
+      <div class="tw" style="max-height:260px;margin-top:8px"><table><thead><tr>
+        <th class="nos">Документ</th><th class="nos">Штук</th><th class="nos">Оборот</th><th class="nos">Прибыль</th></tr></thead>
+        <tbody>${[...r.list].sort((a,b)=>a.rev-b.rev).slice(0,200).map(d=>`<tr>
+          <td class="nm">${esc(d.doc)}</td><td class="num">${f0(d.qty)}</td>
+          <td class="num ${cls(d.rev)}">${f0(d.rev)}</td><td class="num ${cls(d.gross)}">${f0(d.gross)}</td></tr>`).join("")}</tbody>
+      </table></div></details>
+  </div>`;
+}
+
+/* ---------- Вкладка «Юнит-экономика» ---------- */
+function renderUnit(M){
+  const el=document.getElementById("tab-ue");
+  if(!M.ok){el.innerHTML=emptyState();return;}
+  const id="ue";const st=tstate(id,"net");
+  const cats=[...new Set(M.items.map(t=>t.cat))].sort();
+  const filled=M.items.filter(t=>t.uc!=null);
+  /* Строки без артикула (остатки группировок отчёта) сворачиваем в одну — вводить по ним
+     себестоимость поштучно бессмысленно, это не товары. */
+  const noneRaw=M.items.filter(t=>t.uc==null);
+  const noart=noneRaw.filter(t=>String(t.art).startsWith("NOART:"));
+  const none=noneRaw.filter(t=>!String(t.art).startsWith("NOART:"));
+  if(noart.length){
+    const agg={art:"NOART",name:"Строки без артикула — "+noart.length+" шт., объединены",
+      cat:"Без артикула",qty:0,rev:0,price:null,noEdit:true};
+    noart.forEach(t=>{agg.qty+=t.qty;agg.rev+=t.rev;});
+    agg.price=agg.qty?agg.rev/agg.qty:null;
+    none.push(agg);
+  }
+  const posUE=filled.filter(t=>t.netUnit>0);
+  const avgMargin=filled.reduce((a,b)=>a+b.rev,0)?filled.reduce((a,b)=>a+b.net,0)/filled.reduce((a,b)=>a+b.rev,0):null;
+  const avgRoi=filled.reduce((a,b)=>a+b.cogs,0)?filled.reduce((a,b)=>a+b.net,0)/filled.reduce((a,b)=>a+b.cogs,0):null;
+  const rows=sortRows(filterRows(filled,id),st);
+
+  el.innerHTML=`
+  <div class="card">
+    <h3>Сводка по каталогу · ${esc(M.label)}</h3>
+    <div class="kpis" style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden">
+      <div class="kpi"><div class="lab">Средняя маржа</div><div class="val ${cls(avgMargin)}">${pct(avgMargin)}</div>
+        <div class="sub">по товарам с известной себестоимостью</div></div>
+      <div class="kpi"><div class="lab">Средний ROI</div><div class="val ${cls(avgRoi)}">${pct(avgRoi)}</div>
+        <div class="sub">чистая прибыль ÷ себестоимость</div></div>
+      <div class="kpi"><div class="lab">Положительная юнитка</div><div class="val">${filled.length?pct(posUE.length/filled.length,0):"—"}</div>
+        <div class="sub">${posUE.length} из ${filled.length} посчитанных</div></div>
+      <div class="kpi"><div class="lab">Юнитка не считается</div><div class="val ${none.length?"neg":"pos"}">${none.length?pct(none.length/M.items.length,0):"0%"}</div>
+        <div class="sub">${none.length} SKU · ${money(M.cov.noneRev)} выручки</div></div>
+    </div>
+  </div>
+
+  ${none.length?`<div class="card" style="border-color:var(--bad)">
+    <h3>Нет данных о себестоимости — ${none.length} ${plur(none.length,"строка","строки","строк")}</h3>
+    <p class="hint">По этим позициям прибыль, ROI и маржа не показываются вообще: ноль или прочерк ввели бы вас в заблуждение.
+      Введите себестоимость за штуку — она сохранится в браузере, пометится как «вручную» и подтянется при следующих загрузках отчётов по тому же артикулу.</p>
+    <div class="tw" style="max-height:340px"><table><thead><tr>
+      <th class="nos">Артикул</th><th class="nos">Наименование</th><th class="nos">Категория</th>
+      <th class="nos">Шт</th><th class="nos">Выручка</th><th class="nos">Цена</th><th class="nos">Себестоимость, ₽/шт</th></tr></thead>
+      <tbody>${[...none].sort((a,b)=>b.rev-a.rev).map(t=>`<tr>
+        <td><span class="art">${esc(t.art)}</span></td><td class="nm">${esc(t.name.slice(0,80))}</td>
+        <td class="mut small">${esc(t.cat)}</td><td class="num">${f0(t.qty)}</td>
+        <td class="num">${short(t.rev)}</td><td class="num">${f0(t.price)}</td>
+        <td>${t.noEdit?'<span class="tag n">не товар</span>'
+          :`<input class="costin man" type="number" step="0.01" placeholder="ввести" data-costart="${esc(t.art)}" value="">`}</td></tr>`).join("")}
+      </tbody></table></div>
+  </div>`:""}
+
+  ${retBlock(M)}
+
+  <div class="card">
+    <h3>Юнит-экономика по артикулам</h3>
+    <p class="hint">Цепочка от цены до прибыли на единицу. Возвраты берутся из отрицательных строк отчёта 1С,
+      реклама и бонусы разносятся пропорционально доле артикула в выручке периода.</p>
+    ${toolbar(id,cats,true)}
+    <div class="tw"><table><thead><tr>
+      ${thArt(id)}${th(id,"name","Наименование")}${th(id,"ucSrc","Источник")}
+      ${th(id,"price","Цена, ₽","Средняя фактическая цена продажи за штуку")}
+      ${th(id,"uc","Себест., ₽")}${th(id,"taxUnit","Налог, ₽")}
+      ${th(id,"retUnit","Возвраты, ₽","Сумма возвратов, приходящаяся на единицу")}
+      ${th(id,"adUnit","Реклама+бонус, ₽")}${th(id,"netUnit","Прибыль/шт, ₽")}
+      ${th(id,"marginP","Маржа")}${th(id,"roiP","ROI")}${th(id,"qty","Шт")}
+    </tr></thead><tbody>
+      ${rows.slice(0,600).map(t=>{
+        const taxUnit=t.qty?t.taxA/t.qty:0, retUnit=t.qty?t.retRev/Math.abs(t.qty):0, adUnit=t.qty?(t.ad+t.bn)/t.qty:0;
+        t.taxUnit=taxUnit;t.retUnit=retUnit;t.adUnit=adUnit;
+        return `<tr>
+        <td><span class="art">${esc(t.art)}</span></td>
+        <td class="nm">${esc(t.name.slice(0,70))}<div class="xs mut3">${esc(t.cat)}</div></td>
+        <td>${srcTag(t)}<div class="xs mut3">${esc(t.ucLabel)}</div></td>
+        <td class="num">${f2(t.price)}</td>
+        <td>${t.ucSrc==="manual"
+          ?`<input class="costin man" type="number" step="0.01" data-costart="${esc(t.art)}" value="${S.manualCost[t.art]}">`
+          :`<span class="num">${f2(t.uc)}</span>`}</td>
+        <td class="num mut">${f2(taxUnit)}</td>
+        <td class="num ${retUnit?"neg":"mut3"}">${retUnit?"−"+f2(retUnit):"0"}</td>
+        <td class="num mut">−${f2(adUnit)}</td>
+        <td class="num ${cls(t.netUnit)}"><b>${f2(t.netUnit)}</b></td>
+        <td class="num ${cls(t.marginP)}">${pct(t.marginP)}</td>
+        <td class="num ${cls(t.roiP)}">${pct(t.roiP,0)}</td>
+        <td class="num">${f0(t.qty)}</td></tr>`;}).join("")}
+    </tbody></table></div>
+    ${rows.length>600?`<p class="hint" style="margin-top:8px">Показаны первые 600 строк из ${rows.length}. Уточните фильтр или поиск.</p>`:""}
+  </div>`;
+}
+
+/* ---------- Вкладка «Товары» ---------- */
+function renderProducts(M){
+  const el=document.getElementById("tab-pr");
+  if(!M.ok){el.innerHTML=emptyState();return;}
+  const id="pr";const st=tstate(id,"rev");
+  const cats=[...new Set(M.items.map(t=>t.cat))].sort();
+  const rows=sortRows(filterRows(M.items,id),st);
+  const noSplit=`<span class="tag n" title="нет в выгрузках">н/д</span>`;
+
+  el.innerHTML=`
+  ${retBlock(M)}
+  <div class="card">
+    <h3>Товары · ${esc(M.label)}</h3>
+    <p class="hint">Эквайринг, логистика, хранение и штрафы в выгрузках ВсеИнструменты.ру и 1С отсутствуют — это модель работы
+      через поставку на склад покупателя, а не маркетплейсная схема с удержаниями. Соответствующие колонки помечены «н/д»,
+      а не заполнены нулями. ABC показан двумя разными срезами: по вкладу в выручку и по вкладу в прибыль.<br>
+      «Прайс ВИ» — колонка «Закупочная цена» из PRICAT: цена, по которой ВсеИнструменты.ру закупает у нас,
+      то есть наша отпускная цена, а не себестоимость. Колонка «НДС» считается как 100% − цена ÷ прайс ВИ:
+      прайс указан с НДС, выручка в 1С без него, поэтому здесь должна выходить ставка налога.
+      Зелёным — значение до ставки НДС включительно, красным — выше: такая отгрузка шла со скидкой к прайсу.</p>
+    ${toolbar(id,cats,true)}
+    <div class="tw"><table><thead><tr>
+      ${thArt(id)}${th(id,"name","Наименование")}
+      ${th(id,"uc","Себест./шт")}${th(id,"viPrice","Прайс ВИ","Закупочная цена из PRICAT — наша отпускная цена для ВсеИнструменты.ру, не себестоимость")}
+      ${th(id,"price","Цена")}${th(id,"vatRatio","НДС","100% − цена ÷ прайс ВИ. Должно равняться ставке НДС; больше — отгрузка со скидкой к прайсу")}${th(id,"qty","Шт")}${th(id,"rev","Выручка")}
+      <th class="nos" title="Эквайринг / логистика / хранение — в выгрузках нет">Экв·Лог·Хран</th>
+      ${th(id,"ad","Реклама")}${th(id,"drr","ДРР")}${th(id,"bn","Бонусы")}${th(id,"taxA","Налог")}
+      ${th(id,"retRev","Возвраты")}${th(id,"net","Прибыль")}${th(id,"netUnit","₽/шт")}
+      ${th(id,"roiP","ROI")}${th(id,"marginP","Маржа")}${th(id,"share","Доля")}
+      ${th(id,"abcRev","ABC выр.","рассчитывается по накопленному вкладу в выручку")}${th(id,"abcNet","Класс ВИ","классификация из файла «Матрица товаров»")}
+    </tr></thead><tbody>
+      ${rows.slice(0,500).map(t=>{
+        const open=st.exp===t.art;
+        return `<tr><td data-tb="${id}" data-exp="${esc(t.art)}" class="clk"><span class="art">${esc(t.art)}</span></td>
+        <td class="nm clk" data-tb="${id}" data-exp="${esc(t.art)}">${open?"▾ ":"▸ "}${esc(t.name.slice(0,64))}
+          <div class="xs mut3">${esc(t.cat)}${t.inMatrix?" · класс ВИ "+esc(t.inMatrix):" · вне матрицы ВИ"}</div></td>
+        <td>${t.ucSrc==="manual"?`<input class="costin man" type="number" step="0.01" data-costart="${esc(t.art)}" value="${S.manualCost[t.art]}">`
+          :t.uc==null?`<input class="costin" type="number" step="0.01" placeholder="ввести" data-costart="${esc(t.art)}" value="">`
+          :`<span class="num">${f2(t.uc)}</span>`}</td>
+        <td class="num mut">${t.viPrice?f0(t.viPrice):"—"}</td>
+        <td class="num">${f2(t.price)}</td>
+        <td class="num ${vatCls(t.vatRatio)}">${t.vatRatio==null?"—":pct(t.vatRatio,1)}</td>
+        <td class="num">${f0(t.qty)}</td><td class="num">${f0(t.rev)}</td>
+        <td>${noSplit}</td>
+        <td class="num mut">${f0(t.ad)}</td><td class="num">${pct(t.drr)}</td>
+        <td class="num mut">${f0(t.bn)}</td><td class="num mut">${t.taxA?f0(t.taxA):"—"}</td>
+        <td class="num ${t.retRev?"neg":"mut3"}">${t.retRev?f0(t.retRev):"0"}</td>
+        <td class="num ${cls(t.net)}"><b>${t.net==null?'<span class="tag bad">нет себест.</span>':f0(t.net)}</b></td>
+        <td class="num ${cls(t.netUnit)}">${f2(t.netUnit)}</td>
+        <td class="num ${cls(t.roiP)}">${pct(t.roiP,0)}</td><td class="num ${cls(t.marginP)}">${pct(t.marginP)}</td>
+        <td class="num mut">${pct(t.share,2)}</td>
+        <td>${abcTag(t.abcRev)}</td><td>${t.abcNet?abcTag(t.abcNet):'<span class="tag n">—</span>'}</td></tr>`
+        +(open?`<tr class="exp"><td colspan="21">${expandRow(t,M)}</td></tr>`:"");}).join("")}
+    </tbody></table></div>
+    ${rows.length>500?`<p class="hint" style="margin-top:8px">Показаны первые 500 строк из ${rows.length}. Уточните фильтр или поиск.</p>`:""}
+  </div>`;
+}
+function expandRow(t,M){
+  const steps=[{name:"Выручка",v:t.rev},{name:"Себестоимость",v:-(t.cogs||0)},
+    {name:"Бонусы",v:-t.bn},{name:"Реклама",v:-t.ad}];
+  if(t.taxA)steps.push({name:"Налог",v:-t.taxA});
+  steps.push({name:"Чистая",v:t.net||0,total:true});
+  const rec=recommend(t,M);
+  return `<div class="grid2" style="gap:18px">
+    <div>
+      <div class="small mut" style="margin-bottom:6px">Нитка прибыли по товару</div>
+      ${t.cogs!=null?svgWaterfall(steps,520,220):`<div class="empty">Нет себестоимости — нитка прибыли не строится</div>`}
+    </div>
+    <div>
+      <div class="small mut" style="margin-bottom:6px">Воронка и остаток</div>
+      <table style="font-size:12.5px"><tbody>
+        <tr><td>Показы → визиты → корзина → заказ</td><td class="num">${noFunnel()}</td></tr>
+        <tr><td>Продано за период</td><td class="num">${f0(t.qty)} шт${t.retQty?` <span class="neg">(возвраты ${f0(t.retQty)} шт)</span>`:""}</td></tr>
+        <tr><td>Скорость продаж</td><td class="num">${f2(t.speed)} шт/день</td></tr>
+        <tr><td>Остаток на складе ГТВ РУС</td><td class="num">${t.stock==null?'<span class="tag n">нет в PRICAT</span>':f0(t.stock)+" шт"}</td></tr>
+        <tr><td>Хватит на</td><td class="num">${t.daysLeft==null?"—":!isFinite(t.daysLeft)?"нет продаж в периоде":Math.round(t.daysLeft)+" дн"}</td></tr>
+        <tr><td>Прайсовая цена для ВИ (PRICAT)</td><td class="num">${t.viPrice?f0(t.viPrice)+" ₽":"—"}</td></tr>
+        <tr><td>НДС: 100% − цена ÷ прайс ВИ</td><td class="num ${vatCls(t.vatRatio)}">${t.vatRatio==null?"—":pct(t.vatRatio,1)}
+          ${t.vatRatio==null?"":vatCls(t.vatRatio)==="neg"?'<span class="tag bad">скидка к прайсу</span>':'<span class="tag ok">по прайсу</span>'}</td></tr>
+        <tr><td>Рекомендованная розничная цена</td><td class="num">${t.retail?f0(t.retail)+" ₽":"—"}</td></tr>
+        <tr><td>Рекомендация по поставке</td><td>${rec}</td></tr>
+      </tbody></table>
+    </div></div>`;
+}
+const noFunnel=()=>'<span class="tag n" title="ни в одной из загруженных выгрузок нет показов, визитов и корзин">нет данных воронки в отчётах</span>';
+function recommend(t,M){
+  if(t.stock==null)return '<span class="tag n">нужен PRICAT с остатками</span>';
+  if(t.speed<=0)return '<span class="tag n">нет продаж в периоде — поставка не требуется</span>';
+  const d=t.daysLeft;
+  const lowClass=(t.abcNet==="C"||t.abcNet==="L");
+  if(d<S.cfg.critDays&&!lowClass)return `<span class="tag bad">пора поставлять — хватит на ${Math.round(d)} дн</span>`;
+  if(d<S.cfg.warnDays&&!lowClass)return `<span class="tag warn">запланировать поставку (${Math.round(d)} дн)</span>`;
+  if(d<S.cfg.warnDays)return `<span class="tag n">класс ВИ ${esc(t.abcNet)} — поставку можно отложить</span>`;
+  if(d>90)return `<span class="tag n">затоварено: запас на ${Math.round(d)} дн</span>`;
+  return '<span class="tag ok">остатка достаточно</span>';
+}
+
+/* ---------- Вкладка «Реклама / Воронка» ---------- */
+function renderAds(M){
+  const el=document.getElementById("tab-ad");
+  if(!M.ok){el.innerHTML=emptyState();return;}
+  const ad=M.ad;
+  // Sell-out: продажи ВИ конечным покупателям за те же месяцы — из книги «Продажи по СКЮ»
+  let sellOut=null,sellQty=null;
+  if(S.viSell){
+    const ms=monthsOf(M.ps);let r=0,q=0,found=false;const seen={};
+    S.viSell.groups.filter(g=>{           // в сводной ВИ бренды повторяются в разрезе каналов —
+      if(!g.months.length)return false;   // берём только первый блок с помесячной разбивкой
+      if(seen[g.name])return false; seen[g.name]=1; return true;
+    }).forEach(g=>g.months.forEach(mm=>{
+      ms.forEach(x=>{if(mm.m===x.m){
+        const kr=Object.keys(mm.vals).find(k=>/выручка/i.test(k)&&k.endsWith("|"+x.y));
+        const kq=Object.keys(mm.vals).find(k=>/количество/i.test(k)&&k.endsWith("|"+x.y));
+        if(kr){r+=mm.vals[kr];found=true;} if(kq)q+=mm.vals[kq];
+      }});}));
+    if(found){sellOut=r;sellQty=q;}
+  }
+  /* ВАЖНО про базы цен: sell-in (наши отгрузки на ВИ) идёт по закупочной цене — это наша отпускная,
+     а sell-out (продажи ВИ конечным покупателям) — по РРЦ. Складывать и делить их напрямую нельзя.
+     Приводим sell-out к закупочной базе через коэффициент РРЦ/закупочная из PRICAT и показываем обе цифры. */
+  const k=M.rrcK?M.rrcK.v:null;
+  const sellOutBase=(sellOut!=null&&k)?sellOut/k:null;
+  const sellThrough=(sellQty&&M.qty)?sellQty/M.qty:null;
+  const drrSellIn=M.drr;
+  const drrSellOutRRC=(sellOut&&ad.v)?ad.v/sellOut:null;
+
+  const steps=[];
+  steps.push({l:"Продажи ГТВ РУС → ВИ (sell-in)",v:M.revenue,base:M.revenue,
+    tag:"закупочная цена",sub:f0(M.qty)+" шт · наша отпускная цена без НДС, отчёт 1С"});
+  if(sellOut!=null){
+    steps.push({l:"Продажи ВИ конечным покупателям (sell-out)",v:sellOut,base:sellOutBase,
+      tag:"РРЦ", sub:f0(sellQty)+" шт · выручка без НДС в розничных ценах, выгрузка ВИ"
+        +(sellOutBase!=null?" · в закупочных ценах это "+money(sellOutBase):"")});
+  }
+  steps.push({l:"Расход на рекламу",v:ad.v||0,base:ad.v||0,tag:"с НДС",
+    sub:ad.v==null?esc(ad.reason||""):"маркетинговый план"});
+
+  const byGroup={};
+  (ad.detail||[]).forEach(d=>{byGroup[d.group]=(byGroup[d.group]||0)+d.spend;});
+
+  el.innerHTML=`
+  <div class="card">
+    <h3>Воронка каталога · ${esc(M.label)}</h3>
+    <p class="hint">Ни в одной выгрузке нет показов, визитов в карточку и добавлений в корзину — это выгрузки B2B-поставки,
+      а не кабинета маркетплейса. Поэтому воронка построена по доступному разрезу: отгрузка на ВИ → продажа конечным покупателям → стоимость рекламы.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;max-width:860px">
+      ${steps.map((st,i)=>{
+        const b0=steps[0].base||1;
+        const w=st.base!=null?Math.max(6,Math.min(100,st.base/b0*100)):100;
+        return `<div>
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px;gap:10px">
+          <span>${esc(st.l)} <span class="tag n">${esc(st.tag)}</span></span>
+          <span class="num">${money(st.v)}</span></div>
+        <div class="bar" style="height:26px"><i style="width:${w}%;background:${i===steps.length-1?"var(--warn)":"var(--acc)"};opacity:${1-i*0.18}"></i></div>
+        <div class="xs mut3" style="margin-top:3px">${st.sub}</div></div>`;}).join("")}
+    </div>
+    <p class="hint" style="margin-top:12px">Длина полос приведена к одной базе — закупочным ценам. Суммы подписаны в своей исходной базе:
+      sell-in в закупочных, sell-out в РРЦ. ${M.rrcK
+        ? `Коэффициент перевода РРЦ → закупочная — <b>${f2(M.rrcK.v)}</b> (${esc(M.rrcK.src)}${M.rrcK.nn?", "+M.rrcK.nn+" SKU":""}); задать своё значение можно на вкладке «Данные».`
+        : `Коэффициент не рассчитан: нужен PRICAT с колонками «Закупочная цена» и «Рекомендованная цена». Пока sell-out показан только в РРЦ.`}</p>
+    <div class="grid3" style="margin-top:18px">
+      <div class="card" style="margin:0"><div class="lab small mut">ДРР к sell-in (закупочные цены)</div>
+        <div class="num" style="font-size:22px">${pct(drrSellIn)}</div>
+        <div class="small mut">основной показатель: реклама против нашей выручки${M.drr==null?"":M.drr*100>S.cfg.drrHi?" · выше ориентира "+S.cfg.drrLo+"–"+S.cfg.drrHi+"%":M.drr*100<S.cfg.drrLo?" · ниже ориентира":" · в ориентире"}</div></div>
+      <div class="card" style="margin:0"><div class="lab small mut">ДРР к sell-out (РРЦ)</div>
+        <div class="num" style="font-size:22px">${pct(drrSellOutRRC)}</div>
+        <div class="small mut">${sellOut==null?"нужна выгрузка «Продажи по СКЮ» ВИ":"справочно: база розничная, поэтому цифра ниже"}</div></div>
+      <div class="card" style="margin:0"><div class="lab small mut">Sell-through, штуки</div>
+        <div class="num" style="font-size:22px">${pct(sellThrough,0)}</div>
+        <div class="small mut">${sellThrough==null?"нет количеств в выгрузке ВИ"
+          :sellThrough>1?f0(sellQty)+" продано против "+f0(M.qty)+" отгружено — ВИ распродаёт склад быстрее, чем закупает"
+          :f0(sellQty)+" продано против "+f0(M.qty)+" отгружено — ВИ набирает сток"}</div>
+        <div class="xs mut3" style="margin-top:4px">штуки не зависят от ценовой базы — самый честный срез</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Расходы по рекламным размещениям</h3>
+    <p class="hint">Из маркетингового плана: количество размещений в месяцах периода × актуальная стоимость с комиссией рекламораспространителя × НДС.
+      CTR в маркетинговом плане отсутствует — колонка не выводится, а не заполняется нулями.</p>
+    ${ad.v==null?`<div class="empty">${esc(ad.reason)}</div>`
+    :!ad.detail.length?`<div class="empty">В выбранных месяцах размещений в плане нет</div>`
+    :`<div class="tw" style="max-height:520px"><table><thead><tr>
+      <th class="nos">Раздел</th><th class="nos">Активность</th><th class="nos">Детализация</th>
+      <th class="nos">Размещений</th><th class="nos">Цена за ед., ₽</th><th class="nos">Расход, ₽</th>
+      <th class="nos">Доля бюджета</th><th class="nos">ДРР размещения</th></tr></thead>
+      <tbody>${ad.detail.map(d=>`<tr>
+        <td class="xs mut">${esc(d.group)}</td><td class="nm">${esc(d.name)}</td>
+        <td class="xs mut3">${esc(d.detail||"")}</td><td class="num">${f0(d.count)}</td>
+        <td class="num">${f0(d.price)}</td><td class="num">${f0(d.spend)}</td>
+        <td class="num mut">${pct(d.spend/ad.v,0)}</td>
+        <td class="num">${pct(M.revenue?d.spend/M.revenue:null,2)}</td></tr>`).join("")}</tbody>
+      <tfoot><tr><td colspan="5">Итого за период</td><td class="num">${f0(ad.v)}</td><td class="num">100%</td>
+        <td class="num">${pct(M.drr)}</td></tr></tfoot></table></div>
+      <div style="margin-top:16px">${svgBars(Object.entries(byGroup).sort((a,b)=>b[1]-a[1]).slice(0,6)
+        .map(([k,v])=>({l:k.length>16?k.slice(0,15)+"…":k,v})),700,190,short)}</div>`}
+  </div>
+
+  ${S.mkt?`<div class="card">
+    <h3>Годовой маркетинговый план ${esc(S.mkt.year)}</h3>
+    <p class="hint">Плановый товарооборот ${money(S.mkt.head.turnover)} · процент маркетингового бюджета ${pct(S.mkt.head.pctBudget)} · бюджет ${money(S.mkt.head.budget)}</p>
+    ${svgBars(S.mkt.byMonth.map((v,i)=>({l:MONTHS_C[i].slice(0,3),v:v*S.cfg.vat,
+      c:M.ps.some(p=>+p.key.slice(5,7)-1===i)?"var(--acc)":"var(--line2)"})),820,210,short)}
+    <p class="hint" style="margin-top:6px">Оранжевым выделены месяцы выбранного периода. Суммы с НДС.</p>
+  </div>`:""}`;
+}
+
+/* ---------- Вкладка «Остатки» ---------- */
+function renderStock(M){
+  const el=document.getElementById("tab-st");
+  if(!M.ok){el.innerHTML=emptyState();return;}
+  if(!Object.keys(S.pricat).length){
+    el.innerHTML=`<div class="card"><h3>Остатки</h3>
+      <div class="empty">Не загружен файл остатков. Нужен PRICAT со склада ГТВ РУС — лист с колонками
+      «Артикул товара поставщика» и «Количество остатков на складе».<br>Без него скорость продаж считается, а дни до обнуления — нет.</div></div>`;
+    return;}
+  const id="st";const st=tstate(id,"daysLeft");st.dir=st.sort==="daysLeft"?1:st.dir;
+  const cats=[...new Set(M.items.map(t=>t.cat))].sort();
+  const withStock=M.items.filter(t=>t.stock!=null);
+  const buckets=[
+    {l:"< 7 дн",v:0,c:"var(--bad)"},{l:"7–14",v:0,c:"var(--warn)"},
+    {l:"14–30",v:0,c:"var(--acc)"},{l:"30–60",v:0,c:"var(--acc2)"},{l:"> 60",v:0,c:"var(--ok)"}];
+  withStock.forEach(t=>{const d=t.daysLeft;
+    if(d==null||!isFinite(d))return;
+    if(d<7)buckets[0].v++;else if(d<14)buckets[1].v++;else if(d<30)buckets[2].v++;
+    else if(d<60)buckets[3].v++;else buckets[4].v++;});
+  const ok=withStock.filter(t=>t.daysLeft!=null&&(!isFinite(t.daysLeft)||t.daysLeft>=S.cfg.warnDays)).length;
+  const soon=[...withStock].filter(t=>isFinite(t.daysLeft)&&t.speed>0).sort((a,b)=>a.daysLeft-b.daysLeft).slice(0,15);
+  const rows=sortRows(filterRows(withStock,id),st);
+  const today=new Date();
+  const zeroDate=d=>{const x=new Date(today.getTime()+d*86400000);
+    return x.toLocaleDateString("ru-RU",{day:"2-digit",month:"2-digit",year:"numeric"});};
+
+  el.innerHTML=`
+  <div class="card">
+    <h3>Состояние склада ГТВ РУС</h3>
+    <p class="hint">Скорость продаж — фактические отгрузки на ВсеИнструменты.ру за ${M.days} ${plur(M.days,"день","дня","дней")} выбранного периода, делённые на число дней. Пороги настраиваются ниже.<br>
+      <b>Важно:</b> остаток берётся из PRICAT единым снимком на дату выгрузки и не меняется при переключении периода — меняется только скорость продаж.
+      Для планирования поставок выбирайте свежий период, иначе дни до обнуления считаются от старой скорости.</p>
+    <div class="kpis" style="border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:14px">
+      <div class="kpi"><div class="lab">Критично (< ${S.cfg.critDays} дн)</div><div class="val neg">${M.crit.length}</div>
+        <div class="sub">${money(M.crit.reduce((a,b)=>a+b.rev,0))} выручки под угрозой</div></div>
+      <div class="kpi"><div class="lab">Требуют внимания (< ${S.cfg.warnDays} дн)</div><div class="val" style="color:var(--warn)">${M.warnSt.length}</div>
+        <div class="sub">запланировать поставку</div></div>
+      <div class="kpi"><div class="lab">В норме</div><div class="val pos">${ok}</div>
+        <div class="sub">из ${withStock.length} позиций с остатком</div></div>
+      <div class="kpi"><div class="lab">Пороги</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
+          <input class="costin" style="width:52px" type="number" id="critD" value="${S.cfg.critDays}">
+          <span class="mut small">/</span>
+          <input class="costin" style="width:52px" type="number" id="warnD" value="${S.cfg.warnDays}"></div>
+        <div class="sub">критично / внимание, дней</div></div>
+    </div>
+    ${svgBars(buckets,760,200,f0)}
+    <p class="hint" style="margin-top:6px">Распределение позиций по числу дней до обнуления. Позиции без продаж в периоде в гистограмму не попадают — по ним скорость нулевая.</p>
+  </div>
+
+  <div class="card">
+    <h3>Ближайшие к обнулению</h3>
+    ${soon.length?`<div class="tw" style="max-height:400px"><table><thead><tr>
+      <th class="nos">Артикул</th><th class="nos">Наименование</th><th class="nos">Остаток</th>
+      <th class="nos">Шт/день</th><th class="nos">Дней хватит</th><th class="nos">Дата обнуления</th>
+      <th class="nos">ABC приб.</th><th class="nos">Рекомендация</th></tr></thead>
+      <tbody>${soon.map(t=>`<tr><td><span class="art">${esc(t.art)}</span></td>
+        <td class="nm">${esc(t.name.slice(0,64))}</td><td class="num">${f0(t.stock)}</td>
+        <td class="num">${f2(t.speed)}</td>
+        <td class="num ${t.daysLeft<S.cfg.critDays?"neg":t.daysLeft<S.cfg.warnDays?"":"pos"}">${Math.round(t.daysLeft)}</td>
+        <td class="num mut">${zeroDate(t.daysLeft)}</td>
+        <td>${t.abcNet?abcTag(t.abcNet):'<span class="tag n">—</span>'}</td><td>${recommend(t,M)}</td></tr>`).join("")}
+      </tbody></table></div>`:`<div class="empty">Нет позиций с продажами и конечным сроком обнуления</div>`}
+  </div>
+
+  <div class="card">
+    <h3>Планирование поставок</h3>
+    ${toolbar(id,cats,false)}
+    <div class="tw"><table><thead><tr>
+      ${thArt(id)}${th(id,"name","Наименование")}${th(id,"stock","Остаток")}
+      ${th(id,"qty","Продано")}${th(id,"speed","Шт/день")}${th(id,"daysLeft","Дней хватит")}
+      ${th(id,"rev","Выручка")}${th(id,"net","Прибыль")}${th(id,"abcNet","Класс ВИ")}
+      <th class="nos">Статус</th><th class="nos">Рекомендация</th></tr></thead>
+      <tbody>${rows.slice(0,500).map(t=>{
+        const d=t.daysLeft;
+        const status=!isFinite(d)?'<span class="tag n">нет продаж</span>'
+          :d<S.cfg.critDays?'<span class="tag bad">критично</span>'
+          :d<S.cfg.warnDays?'<span class="tag warn">внимание</span>':'<span class="tag ok">норма</span>';
+        return `<tr><td><span class="art">${esc(t.art)}</span></td>
+        <td class="nm">${esc(t.name.slice(0,58))}</td><td class="num">${f0(t.stock)}</td>
+        <td class="num">${f0(t.qty)}</td><td class="num">${f2(t.speed)}</td>
+        <td class="num">${!isFinite(d)?"∞":Math.round(d)}</td>
+        <td class="num">${short(t.rev)}</td><td class="num ${cls(t.net)}">${t.net==null?"—":short(t.net)}</td>
+        <td>${t.abcNet?abcTag(t.abcNet):'<span class="tag n">—</span>'}</td><td>${status}</td><td>${recommend(t,M)}</td></tr>`;}).join("")}
+      </tbody></table></div>
+    ${rows.length>500?`<p class="hint" style="margin-top:8px">Показаны первые 500 строк из ${rows.length}.</p>`:""}
+  </div>
+
+  ${S.viStock.length?`<div class="card">
+    <h3>Остатки на складах ВсеИнструменты.ру</h3>
+    <p class="hint">Из листа «Остатки» книги ВИ. Артикул в этой выгрузке не передаётся отдельной колонкой — извлекается из наименования, поэтому часть строк не сопоставляется с каталогом.</p>
+    <div class="tw" style="max-height:420px"><table><thead><tr>
+      <th class="nos">Наименование</th><th class="nos">Артикул</th><th class="nos">Кол-во</th><th class="nos">Сумма</th></tr></thead>
+      <tbody>${[...S.viStock].sort((a,b)=>b.amount-a.amount).slice(0,120).map(r=>`<tr>
+        <td class="nm">${esc(r.name.slice(0,80))}</td><td><span class="art">${esc(r.art||"—")}</span></td>
+        <td class="num">${f0(r.qty)}</td><td class="num">${f0(r.amount)}</td></tr>`).join("")}</tbody>
+      <tfoot><tr><td>Итого ${S.viStock.length} позиций</td><td></td>
+        <td class="num">${f0(S.viStock.reduce((a,b)=>a+b.qty,0))}</td>
+        <td class="num">${f0(S.viStock.reduce((a,b)=>a+b.amount,0))}</td></tr></tfoot></table></div>
+  </div>`:""}`;
+
+  const cd=el.querySelector("#critD"),wd=el.querySelector("#warnD");
+  const upd=()=>{S.cfg.critDays=Math.max(1,+cd.value||7);S.cfg.warnDays=Math.max(S.cfg.critDays+1,+wd.value||14);save();renderAll();};
+  if(cd)cd.onchange=upd; if(wd)wd.onchange=upd;
+}
+
+/* ================================================================================
+   БЛОК 8b. ВКЛАДКА «МАТРИЦА ВИ»
+   Классы A / B / C / D / L / M / X приходят из колонки «Матрица» файла «Матрица товаров».
+   Квартал в самом файле не указан нигде, поэтому он либо угадывается из имени файла,
+   либо задаётся вручную — без этого сравнение кварталов было бы выдумкой.
+   ================================================================================ */
+const CLS_ORDER=["X","A","B","C","D","L","M"];
+const CLS_COL={A:"var(--acc)",B:"var(--acc2)",C:"var(--line2)",D:"#7a6bd6",L:"var(--info)",M:"#c98bd6",X:"var(--ok)"};
+const clsList=maps=>{
+  const set=new Set();maps.forEach(m=>Object.values(m||{}).forEach(v=>{if(v.cls)set.add(v.cls);}));
+  return [...CLS_ORDER.filter(c=>set.has(c)),...[...set].filter(c=>!CLS_ORDER.includes(c)).sort()];
+};
+const countByCls=map=>{const c={};Object.values(map||{}).forEach(v=>{if(v.cls)c[v.cls]=(c[v.cls]||0)+1;});return c;};
+
+/* Сгруппированная столбчатая диаграмма: два квартала рядом по каждому классу. */
+function svgGrouped(cats,series,w,h){
+  w=w||780;h=h||260;const pad={l:10,r:10,t:22,b:46};
+  const iw=w-pad.l-pad.r,ih=h-pad.t-pad.b;
+  const gap=iw/cats.length, bw=gap*0.66/series.length;
+  if(series.some(s=>s.lab&&s.lab.some(x=>String(x).includes("\n"))))pad.t+=12;
+  const mx=Math.max(1,...series.flatMap(s=>s.v));
+  let g="";
+  cats.forEach((c,i)=>{
+    series.forEach((s,k)=>{
+      const v=s.v[i]||0,bh=Math.max(1,v/mx*ih);
+      const x=pad.l+i*gap+(gap-bw*series.length)/2+k*bw, y=pad.t+ih-bh;
+      g+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw-3).toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${s.c}" opacity="${k?.6:.95}"/>`;
+      const lab=s.lab?s.lab[i]:(v||"");
+      // подпись может быть двухстрочной: значение сверху, процент выполнения под ним
+      String(lab).split("\n").forEach((ln,li)=>{
+        g+=`<text x="${(x+(bw-3)/2).toFixed(1)}" y="${(y-6-(String(lab).split("\n").length-1-li)*12).toFixed(1)}"
+          text-anchor="middle" font-size="${li?9.5:10.5}" fill="${li?"var(--tx2)":"var(--tx)"}">${esc(ln)}</text>`;});
+    });
+    g+=`<text x="${(pad.l+i*gap+gap/2).toFixed(1)}" y="${(pad.t+ih+17).toFixed(1)}" text-anchor="middle" font-size="12" fill="var(--tx2)">${esc(c)}</text>`;
+  });
+  g+=`<line x1="${pad.l}" y1="${pad.t+ih}" x2="${w-pad.r}" y2="${pad.t+ih}" stroke="var(--line2)"/>`;
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">${g}</svg>`;
+}
+
+function renderMatrix(M){
+  const el=document.getElementById("tab-mx");
+  const sets=Object.values(S.matrixSets||{});
+  if(!sets.length){
+    el.innerHTML=`<div class="card"><h3>Матрица товаров ВсеИнструменты.ру</h3>
+      <div class="empty">Не загружен ни один файл матрицы. Нужна книга с листом «Матрица товаров»
+      (колонки «Артикул поставщика» и «Матрица») — например, «Матрица_товаров_1_квартал.xlsx».<br>
+      Чтобы сравнить кварталы, загрузите два таких файла: за 1-й и за 2-й квартал.</div></div>`;
+    return;
+  }
+  const st=tstate("mx","art");
+  const dated=sets.filter(s=>s.quarter).sort((a,b)=>a.quarter<b.quarter?-1:1);
+  const qA=st.qA&&S.matrixSets[st.qA]?st.qA:(dated[0]||sets[0]).id;
+  const qB=st.qB&&S.matrixSets[st.qB]?st.qB:(dated[1]||sets[1]||sets[0]).id;
+  const A=S.matrixSets[qA],B=S.matrixSets[qB];
+  const same=qA===qB;
+  const cats=clsList([A.map,B.map]);
+  const cA=countByCls(A.map),cB=countByCls(B.map);
+  /* Проверяем, не один ли это список, загруженный дважды: иначе «сравнение» показывает
+     одинаковые столбцы и выглядит как будто переключение кварталов не работает. */
+  const identical=!same&&sameMap(A.map,B.map);
+  /* Класс C обычно на порядок больше остальных и сплющивает график, поэтому по умолчанию
+     самый крупный класс из диаграммы убираем — цифры при этом остаются в таблице. */
+  const domin=cats.slice().sort((x,y)=>(cB[y]||0)-(cB[x]||0))[0];
+  const second=cats.slice().sort((x,y)=>(cB[y]||0)-(cB[x]||0))[1];
+  if(st.hide===undefined)st.hide=(domin&&second&&(cB[domin]||0)>5*(cB[second]||0))?[domin]:[];
+  const shown=cats.filter(c=>!st.hide.includes(c));
+  const labA=A.quarter?qLabel(A.quarter):A.label, labB=B.quarter?qLabel(B.quarter):B.label;
+
+  /* Переходы между классами: что изменилось от одного квартала к другому. */
+  const moves=[];let added=0,removed=0,changed=0,stayed=0;
+  const arts=new Set([...Object.keys(A.map),...Object.keys(B.map)]);
+  arts.forEach(a=>{
+    const x=A.map[a],y=B.map[a];
+    const ca=x&&x.cls?x.cls:null, cb=y&&y.cls?y.cls:null;
+    if(ca===cb){if(ca)stayed++;return;}
+    if(!ca)added++; else if(!cb)removed++; else changed++;
+    moves.push({art:a,name:(y&&y.name)||(x&&x.name)||"",from:ca,to:cb,
+      kind:!ca?"новый":!cb?"выбыл":"переведён"});
+  });
+
+  // товары квартала с продажами: даём срез по выручке и прибыли на класс
+  const bySales={};
+  (M.items||[]).forEach(t=>{const m=B.map[t.art];const c=m&&m.cls;if(!c)return;
+    const z=bySales[c]||(bySales[c]={cls:c,sku:0,qty:0,rev:0,net:0});
+    z.sku++;z.qty+=t.qty;z.rev+=t.rev;if(t.net!=null)z.net+=t.net;});
+
+  // список артикулов выбранного квартала
+  const showId=st.showQ&&S.matrixSets[st.showQ]?st.showQ:qB;
+  const SH=S.matrixSets[showId];
+  const shList=Object.entries(SH.map).filter(([a,v])=>v.cls)
+    .map(([a,v])=>({art:a,name:v.name,cls:v.cls,
+      other:(showId===qA?B:A).map[a]?((showId===qA?B:A).map[a].cls||null):null}))
+    .filter(r=>!st.mxCls||r.cls===st.mxCls)
+    .filter(r=>{const q=(st.mxQ||"").trim().toUpperCase();
+      return !q||r.art.toUpperCase().includes(q)||String(r.name).toUpperCase().includes(q);})
+    .sort((a,b)=>CLS_ORDER.indexOf(a.cls)-CLS_ORDER.indexOf(b.cls)||a.art.localeCompare(b.art));
+
+  el.innerHTML=`
+  <div class="card">
+    <h3>Наборы матрицы</h3>
+    <p class="hint">Период внутри файла матрицы не передаётся — ни колонкой, ни листом. Квартал определяется по имени файла,
+      а если не определился, задайте его вручную: без этого сравнение кварталов было бы выдумкой.
+      Набор, отмеченный как активный, используется для колонки «Класс ВИ» и ABC на остальных вкладках.</p>
+    <div class="tw" style="max-height:240px"><table><thead><tr>
+      <th class="nos">Файл</th><th class="nos">Квартал</th><th class="nos">Артикулов</th>
+      <th class="nos">Активный</th><th class="nos"></th></tr></thead>
+      <tbody>${sets.map(s=>`<tr>
+        <td class="nm">${esc(s.label)}</td>
+        <td><select class="sel" style="padding:3px 7px" data-mxq="${esc(s.id)}">
+          <option value=""${!s.quarter?" selected":""}>не задан</option>
+          ${["2025-Q3","2025-Q4","2026-Q1","2026-Q2","2026-Q3","2026-Q4"].map(q=>
+            `<option value="${q}"${s.quarter===q?" selected":""}>${qLabel(q)}</option>`).join("")}
+        </select></td>
+        <td class="num">${f0(s.count)}</td>
+        <td>${S.matrix===s.map?'<span class="tag ok">активный</span>':
+          `<button class="btn" style="padding:3px 9px" data-mxact="${esc(s.id)}">сделать активным</button>`}</td>
+        <td><span class="x" style="cursor:pointer;color:var(--tx3)" data-mxdel="${esc(s.id)}">✕</span></td></tr>`).join("")}
+      </tbody></table></div>
+  </div>
+
+  <div class="card">
+    <h3>Сравнение кварталов по классам матрицы</h3>
+    <div class="tools">
+      <select class="sel" data-mxsel="qA">${sets.map(s=>`<option value="${esc(s.id)}"${s.id===qA?" selected":""}>${esc(s.quarter?qLabel(s.quarter):s.label)}</option>`).join("")}</select>
+      <span class="mut">против</span>
+      <select class="sel" data-mxsel="qB">${sets.map(s=>`<option value="${esc(s.id)}"${s.id===qB?" selected":""}>${esc(s.quarter?qLabel(s.quarter):s.label)}</option>`).join("")}</select>
+    </div>
+    ${same?`<div class="ins warn"><span class="ic">⚠</span><div>Выбран один и тот же набор с обеих сторон — сравнивать не с чем.
+      Загрузите файл матрицы за второй квартал.</div></div>`:""}
+    ${identical?`<div class="ins bad"><span class="ic">⚠</span><div>
+      Наборы «${esc(labA)}» и «${esc(labB)}» содержат <b>полностью одинаковые</b> ${f0(Object.keys(A.map).length)} артикулов
+      с теми же классами. Это один и тот же список, загруженный из двух файлов, поэтому столбцы совпадают,
+      а изменений нет — переключение кварталов работает, просто сравнивать нечего.
+      Нужен отдельный файл матрицы за другой квартал.</div></div>`:""}
+    <div class="chips">
+      <span class="mut small" style="align-self:center;margin-right:4px">Классы на графике:</span>
+      ${cats.map(c=>`<span class="chip${st.hide.includes(c)?"":" on"}" data-mxhide="${esc(c)}">${esc(c)} · ${f0(cB[c]||0)}</span>`).join("")}
+    </div>
+    ${shown.length?svgGrouped(shown,[
+      {n:labA,v:shown.map(c=>cA[c]||0),c:"var(--acc)"},
+      {n:labB,v:shown.map(c=>cB[c]||0),c:"var(--info)"}],820,270)
+      :`<div class="empty">Все классы скрыты — включите хотя бы один</div>`}
+    ${st.hide.length?`<p class="hint">Скрыт${st.hide.length>1?"ы":""} ${st.hide.map(esc).join(", ")} —
+      ${st.hide.length>1?"эти классы":"этот класс"} на порядок крупнее остальных и сплющивал${st.hide.length>1?"и":""} график.
+      Клик по метке возвращает ${st.hide.length>1?"их":"его"} на диаграмму.</p>`:""}
+    <div class="legend"><span><i style="background:var(--acc)"></i>${esc(labA)}</span>
+      <span><i style="background:var(--info)"></i>${esc(labB)}</span></div>
+
+    <div class="tw" style="margin-top:16px"><table><thead><tr>
+      <th class="nos">Класс</th><th class="nos">${esc(labA)}</th><th class="nos">${esc(labB)}</th>
+      <th class="nos">Изменение</th><th class="nos">Динамика</th>
+      <th class="nos">Выручка периода</th><th class="nos">Прибыль периода</th></tr></thead>
+      <tbody>${cats.map(c=>{
+        const a=cA[c]||0,b=cB[c]||0,d=b-a;
+        const s=bySales[c];
+        return `<tr>
+        <td><span class="tag" style="background:${CLS_COL[c]||"var(--panel2)"};color:#12151b">${esc(c)}</span></td>
+        <td class="num">${f0(a)}</td><td class="num">${f0(b)}</td>
+        <td class="num ${cls(d)}">${d>0?"+":""}${f0(d)}</td>
+        <td>${a===0?'<span class="tag acc">новый класс</span>'
+          :d===0?'<span class="tag n">без изменений</span>'
+          :d>0?`<span class="tag ok">рост ${pct(d/a,0)}</span>`:`<span class="tag bad">падение ${pct(-d/a,0)}</span>`}</td>
+        <td class="num">${s?short(s.rev):"—"}</td><td class="num ${s?cls(s.net):""}">${s?short(s.net):"—"}</td></tr>`;}).join("")}
+      </tbody>
+      <tfoot><tr><td>Всего</td>
+        <td class="num">${f0(Object.values(cA).reduce((x,y)=>x+y,0))}</td>
+        <td class="num">${f0(Object.values(cB).reduce((x,y)=>x+y,0))}</td>
+        <td class="num ${cls(Object.values(cB).reduce((x,y)=>x+y,0)-Object.values(cA).reduce((x,y)=>x+y,0))}">
+          ${(()=>{const d=Object.values(cB).reduce((x,y)=>x+y,0)-Object.values(cA).reduce((x,y)=>x+y,0);return (d>0?"+":"")+f0(d);})()}</td>
+        <td colspan="3"></td></tr></tfoot></table></div>
+    <p class="hint" style="margin-top:8px">Выручка и прибыль — за выбранный вверху период (${esc(M.ok?M.label:"нет данных")}),
+      по товарам, которые входят в набор «${esc(labB)}». Это срез продаж по классам, а не показатель самой матрицы.</p>
+  </div>
+
+  ${same?"":`<div class="card">
+    <h3>Что изменилось между кварталами</h3>
+    <div class="grid3" style="margin-bottom:12px">
+      <div><div class="lab small mut">Новые артикулы</div><div class="num pos" style="font-size:22px">+${f0(added)}</div></div>
+      <div><div class="lab small mut">Выбыли из матрицы</div><div class="num neg" style="font-size:22px">−${f0(removed)}</div></div>
+      <div><div class="lab small mut">Сменили класс</div><div class="num" style="font-size:22px;color:var(--warn)">${f0(changed)}</div>
+        <div class="small mut">без изменений: ${f0(stayed)}</div></div>
+    </div>
+    ${moves.length?`<div class="tw" style="max-height:420px"><table><thead><tr>
+      <th class="nos">Артикул</th><th class="nos">Наименование</th>
+      <th class="nos">${esc(labA)}</th><th class="nos">${esc(labB)}</th><th class="nos">Что произошло</th></tr></thead>
+      <tbody>${moves.slice(0,400).map(m=>`<tr>
+        <td><span class="art">${esc(m.art)}</span></td><td class="nm">${esc(String(m.name).slice(0,70))}</td>
+        <td>${m.from?`<span class="tag n">${esc(m.from)}</span>`:"—"}</td>
+        <td>${m.to?`<span class="tag n">${esc(m.to)}</span>`:"—"}</td>
+        <td><span class="tag ${m.kind==="новый"?"ok":m.kind==="выбыл"?"bad":"warn"}">${m.kind}</span></td></tr>`).join("")}
+      </tbody></table></div>
+      ${moves.length>400?`<p class="hint" style="margin-top:8px">Показаны первые 400 изменений из ${moves.length}.</p>`:""}`
+    :`<div class="empty">Составы наборов совпадают полностью — ни одного изменения</div>`}
+  </div>`}
+
+  <div class="card">
+    <h3>Артикулы по классам — ${esc(SH.quarter?qLabel(SH.quarter):SH.label)}</h3>
+    <p class="hint">Какие артикулы в какой класс матрицы входили в этом квартале.</p>
+    <div class="tools">
+      <select class="sel" data-mxsel="showQ">${sets.map(s=>`<option value="${esc(s.id)}"${s.id===showId?" selected":""}>${esc(s.quarter?qLabel(s.quarter):s.label)}</option>`).join("")}</select>
+      <input class="inp" data-mxinp="mxQ" placeholder="Поиск по артикулу или названию" value="${esc(st.mxQ||"")}">
+      <span class="mut small">Найдено: ${f0(shList.length)}</span>
+    </div>
+    <div class="chips">
+      <span class="chip${!st.mxCls?" on":""}" data-mxcls="">Все классы</span>
+      ${cats.map(c=>`<span class="chip${st.mxCls===c?" on":""}" data-mxcls="${esc(c)}">${esc(c)} · ${f0(countByCls(SH.map)[c]||0)}</span>`).join("")}
+    </div>
+    <div class="tw"><table><thead><tr>
+      <th class="nos">Класс</th><th class="nos">Артикул</th><th class="nos">Наименование</th>
+      <th class="nos">Класс в другом квартале</th></tr></thead>
+      <tbody>${shList.slice(0,600).map(r=>`<tr>
+        <td><span class="tag" style="background:${CLS_COL[r.cls]||"var(--panel2)"};color:#12151b">${esc(r.cls)}</span></td>
+        <td><span class="art">${esc(r.art)}</span></td>
+        <td class="nm">${esc(String(r.name).slice(0,80))}</td>
+        <td>${r.other?`<span class="tag ${r.other===r.cls?"n":"warn"}">${esc(r.other)}</span>`:'<span class="tag bad">нет</span>'}</td></tr>`).join("")}
+      </tbody></table></div>
+    ${shList.length>600?`<p class="hint" style="margin-top:8px">Показаны первые 600 из ${f0(shList.length)}. Уточните поиск или выберите класс.</p>`:""}
+  </div>`;
+
+  // --- обработчики ---
+  el.querySelectorAll("[data-mxq]").forEach(s=>s.onchange=()=>{
+    S.matrixSets[s.dataset.mxq].quarter=s.value||null;pickActiveMatrix();save();renderAll();});
+  el.querySelectorAll("[data-mxact]").forEach(b=>b.onclick=()=>{
+    S.cfg.matrixActive=b.dataset.mxact;pickActiveMatrix();save();renderAll();
+    toast("Активный набор матрицы изменён — классы ВИ пересчитаны на всех вкладках","ok");});
+  el.querySelectorAll("[data-mxdel]").forEach(b=>b.onclick=()=>{
+    if(!confirm("Удалить этот набор матрицы?"))return;
+    delete S.matrixSets[b.dataset.mxdel];
+    if(S.cfg.matrixActive===b.dataset.mxdel)S.cfg.matrixActive=null;
+    pickActiveMatrix();save();renderAll();});
+  el.querySelectorAll("[data-mxsel]").forEach(s=>s.onchange=()=>{st[s.dataset.mxsel]=s.value;renderAll();});
+  el.querySelectorAll("[data-mxhide]").forEach(c=>c.onclick=()=>{
+    const k=c.dataset.mxhide;
+    st.hide=st.hide.includes(k)?st.hide.filter(x=>x!==k):[...st.hide,k];
+    renderAll();});
+  el.querySelectorAll("[data-mxcls]").forEach(c=>c.onclick=()=>{st.mxCls=c.dataset.mxcls;renderAll();});
+  el.querySelectorAll("[data-mxinp]").forEach(i=>{
+    i.oninput=()=>{st[i.dataset.mxinp]=i.value;clearTimeout(i._t);i._t=setTimeout(()=>{
+      const p=i.selectionStart;renderAll();
+      const nel=document.querySelector(`[data-mxinp="${i.dataset.mxinp}"]`);
+      if(nel){nel.focus();nel.setSelectionRange(p,p);}},260);};});
+}
+/* Полное совпадение двух наборов матрицы — по составу артикулов и присвоенным классам. */
+function sameMap(a,b){
+  const ka=Object.keys(a),kb=Object.keys(b);
+  if(ka.length!==kb.length)return false;
+  for(const k of ka){if(!b[k]||b[k].cls!==a[k].cls)return false;}
+  return true;
+}
+function qLabel(q){const[y,qq]=String(q).split("-Q");return qq+"-й квартал "+y;}
+
+/* ---------- Вкладка «Данные и настройки» ---------- */
+function renderData(M){
+  const el=document.getElementById("tab-dt");
+  const pk=Object.keys(S.periods).sort();
+  el.innerHTML=`
+  <div class="card">
+    <h3>Загрузка отчётов</h3>
+    <p class="hint">Тип файла определяется автоматически по набору колонок и названиям листов — имя файла не важно.
+      Можно загружать в любой момент: пересчёт всех вкладок происходит сразу, без перезагрузки страницы.</p>
+    <div class="drop" id="drop">Перетащите файлы сюда или нажмите, чтобы выбрать<br>
+      <span class="small mut3">.xlsx · несколько файлов за раз</span></div>
+    <div class="grid2" style="margin-top:16px">
+      <div>
+        <div class="small mut" style="margin-bottom:8px">Что распознаётся</div>
+        <table style="font-size:12.5px"><tbody>
+          <tr><td class="nm">Отчёт 1С «Валовая прибыль по клиентам»</td><td>${statusTag(pk.length,pk.length+" периодов")}</td></tr>
+          <tr><td class="nm">Справочник себестоимости (Артикул + Себестоимость)</td><td>${statusTag(Object.keys(S.costFile).length,Object.keys(S.costFile).length+" артикулов")}</td></tr>
+          <tr><td class="nm">PRICAT: каталог и остатки склада</td><td>${statusTag(Object.keys(S.pricat).length,Object.keys(S.pricat).length+" позиций")}</td></tr>
+          <tr><td class="nm">Маркетинговый план (лист «МП»)</td><td>${statusTag(S.mkt?1:0,S.mkt?S.mkt.year+" г., "+S.mkt.acts.length+" активностей":"")}</td></tr>
+          <tr><td class="nm">Квартальные бонусы</td><td>${statusTag(Object.keys(S.bonus).length,Object.keys(S.bonus).sort().join(", "))}</td></tr>
+          <tr><td class="nm">Книга ВИ: продажи конечным покупателям</td><td>${statusTag(S.viSell?1:0,"")}</td></tr>
+          <tr><td class="nm">Матрица товаров ВИ</td><td>${statusTag(Object.keys(S.matrix).length,Object.keys(S.matrix).length+" артикулов")}</td></tr>
+        </tbody></table>
+      </div>
+      <div>
+        <div class="small mut" style="margin-bottom:8px">Загруженные периоды продаж</div>
+        <div class="files">${pk.length?pk.map(k=>{const p=S.periods[k];
+          return `<div class="frow"><b>${esc(p.label)}</b>
+            <span class="mut small">${esc(p.from)}–${esc(p.to)} · ${rowsOf(p).length} SKU · ${money(sumRev(p))}${
+              p.skippedDocRows?` · <span class="tag n">${p.skippedDocRows} подытогов документов исключено</span>`:""}</span>
+            <span style="flex:1"></span><span class="x" data-delper="${esc(k)}" title="Удалить период">✕</span></div>`;}).join("")
+          :`<div class="empty">Периоды не загружены</div>`}</div>
+        ${pk.length?`<div class="xs mut3" style="margin-top:8px">Источники: ${esc([...new Set(pk.flatMap(k=>S.periods[k].sources||[]))].join(", "))}</div>`:""}
+      </div>
+    </div>
+  </div>
+
+  ${pk.length?`<div class="card">
+    <h3>Сверка выручки с отчётами 1С</h3>
+    <p class="hint">Выручка дашборда складывается <b>только</b> из помесячных отчётов «Валовая прибыль по клиентам».
+      Ни маркетинговый план, ни выгрузка продаж ВИ конечным покупателям, ни PRICAT в неё не попадают — они дают
+      рекламу, sell-out и остатки, но не оборот. Здесь сумма строк номенклатуры сравнивается со строкой «Итого»
+      внутри самого файла: расхождение означало бы ошибку разбора.</p>
+    <div class="tw" style="max-height:340px"><table><thead><tr>
+      <th class="nos">Период</th><th class="nos">Сумма строк</th><th class="nos">«Итого» в отчёте</th>
+      <th class="nos">Расхождение</th><th class="nos">Себестоимость</th><th class="nos">Статус</th></tr></thead>
+      <tbody>${pk.map(k=>{const p=S.periods[k];const our=sumRev(p);
+        const rt=p.reportTotal;const d=rt?our-rt.rev:null;
+        const ok=d!=null&&Math.abs(d)<Math.max(1,Math.abs(rt.rev)*0.0001);
+        return `<tr><td>${esc(p.label)}</td>
+          <td class="num">${f2(our)}</td>
+          <td class="num">${rt?f2(rt.rev):'<span class="tag n">нет строки «Итого»</span>'}</td>
+          <td class="num ${d==null?"":ok?"mut3":"neg"}">${d==null?"—":f2(d)}</td>
+          <td class="num mut">${rt?f0(rt.cost):"—"}</td>
+          <td>${d==null?'<span class="tag n">не проверено</span>'
+            :ok?'<span class="tag ok">сходится</span>':'<span class="tag bad">расхождение</span>'}</td></tr>`;}).join("")}
+      </tbody>
+      <tfoot><tr><td>Итого</td>
+        <td class="num">${f2(pk.reduce((a,k)=>a+sumRev(S.periods[k]),0))}</td>
+        <td class="num">${f2(pk.reduce((a,k)=>a+((S.periods[k].reportTotal||{}).rev||0),0))}</td>
+        <td class="num">${f2(pk.reduce((a,k)=>a+sumRev(S.periods[k]),0)-pk.reduce((a,k)=>a+((S.periods[k].reportTotal||{}).rev||0),0))}</td>
+        <td colspan="2"></td></tr></tfoot></table></div>
+  </div>`:""}
+
+  <div class="card">
+    <h3>Правила расчёта</h3>
+    <label class="ci"><input type="checkbox" id="cfgVat" ${S.cfg.vatCost?"checked":""}>
+      <span>Приводить себестоимость из справочника к базе без НДС (÷${S.cfg.vat})
+      <div class="xs mut3">Выручка в отчёте 1С — без НДС, а «Себестоимость.xlsx» — с НДС. Без приведения маржа занижается примерно на 18 п.п.</div></span></label>
+    <div class="ins info" style="margin:12px 0"><span class="ic">i</span><div>
+      Себестоимость берётся только из двух источников: колонка «Себестоимость товаров» отчёта 1С и справочник себестоимости.
+      «Закупочная цена» из PRICAT в расчёте не участвует — это цена закупки ВсеИнструменты.ру у нас, то есть наша отпускная цена;
+      она показана на вкладке «Товары» отдельной колонкой «Прайс ВИ» для сравнения с фактической ценой отгрузки.</div></div>
+    <label class="ci"><input type="checkbox" id="cfgMkt" ${S.cfg.skipMktBonus?"checked":""}>
+      <span>Не вычитать маркетинговый бонус отдельной строкой
+      <div class="xs mut3">Маркетинговый бонус 8% — источник финансирования маркетингового плана. Если вычесть и его, и расход по плану, маркетинг посчитается дважды.</div></span></label>
+    <div class="grid3" style="margin-top:12px">
+      <div><div class="lab small mut">База разнесения рекламы и бонусов</div>
+        <select class="sel" id="cfgAdBase" style="width:100%">
+          <option value="rev"${S.cfg.adBase==="rev"?" selected":""}>Пропорционально продажам в рублях</option>
+          <option value="qty"${S.cfg.adBase==="qty"?" selected":""}>Пропорционально продажам в штуках</option>
+        </select>
+        <div class="xs mut3" style="margin-top:4px">Расходы разносятся на все товары периода.</div></div>
+      <div><div class="lab small mut">Ставка налога на прибыль, %</div>
+        <input class="inp" type="number" id="cfgTax" value="${S.cfg.taxRate}" placeholder="0 — не учитывать"></div>
+      <div><div class="lab small mut">Ориентир ДРР, нижняя граница %</div>
+        <input class="inp" type="number" id="cfgLo" value="${S.cfg.drrLo}"></div>
+      <div><div class="lab small mut">Ориентир ДРР, верхняя граница %</div>
+        <input class="inp" type="number" id="cfgHi" value="${S.cfg.drrHi}"></div>
+      <div><div class="lab small mut">Коэффициент РРЦ ÷ закупочная цена</div>
+        <input class="inp" type="number" step="0.01" id="cfgK" value="${S.cfg.rrcK||""}" placeholder="пусто — считать из PRICAT">
+        <div class="xs mut3" style="margin-top:4px">Sell-in идёт по закупочной цене, sell-out у ВИ — по РРЦ. Коэффициент приводит их к одной базе на вкладке «Реклама».
+          ${M.rrcK?"Сейчас используется <b>"+f2(M.rrcK.v)+"</b> ("+esc(M.rrcK.src)+").":""}</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Себестоимость, введённая вручную</h3>
+    <p class="hint">Хранится в браузере и подтягивается автоматически при следующих визитах и при загрузке новых отчётов по тому же артикулу.
+      Пересчёт всех вкладок происходит сразу после изменения.</p>
+    ${Object.keys(S.manualCost).length?`<div class="tw" style="max-height:320px"><table><thead><tr>
+      <th class="nos">Артикул</th><th class="nos">Наименование</th><th class="nos">₽/шт</th><th class="nos"></th></tr></thead>
+      <tbody>${Object.keys(S.manualCost).sort().map(a=>{
+        const nm=(S.pricat[a]&&S.pricat[a].name)||(S.costFile[a]&&S.costFile[a].name)||
+          ((M.items||[]).find(t=>t.art===a)||{}).name||"";
+        return `<tr><td><span class="art">${esc(a)}</span></td><td class="nm">${esc(String(nm).slice(0,70))}</td>
+        <td><input class="costin man" type="number" step="0.01" data-costart="${esc(a)}" value="${S.manualCost[a]}"></td>
+        <td><span class="x" style="cursor:pointer;color:var(--tx3)" data-delcost="${esc(a)}">✕</span></td></tr>`;}).join("")}
+      </tbody></table></div>`:`<div class="empty">Ручных значений пока нет — вся себестоимость берётся из отчётов</div>`}
+  </div>
+
+  <div class="card">
+    <h3>Сброс</h3>
+    <p class="hint">Планы, ручная себестоимость и срезы хранятся отдельно от данных отчётов — можно очистить только отчёты.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="clrData">Удалить все отчёты</button>
+      <button class="btn" id="clrCost">Удалить ручную себестоимость</button>
+      <button class="btn" id="clrSnap">Удалить срезы</button>
+      <button class="btn" id="clrAll">Очистить всё</button>
+    </div>
+  </div>`;
+
+  const drop=el.querySelector("#drop");
+  drop.onclick=()=>document.getElementById("fileIn").click();
+  drop.ondragover=e=>{e.preventDefault();drop.classList.add("over");};
+  drop.ondragleave=()=>drop.classList.remove("over");
+  drop.ondrop=e=>{e.preventDefault();drop.classList.remove("over");handleFiles(e.dataTransfer.files);};
+  el.querySelectorAll("[data-delper]").forEach(b=>b.onclick=()=>{
+    delete S.periods[b.dataset.delper];
+    if(S.cur===b.dataset.delper)S.cur=null;finishLoad();});
+  el.querySelectorAll("[data-delcost]").forEach(b=>b.onclick=()=>{
+    delete S.manualCost[b.dataset.delcost];save();renderAll();});
+  const bind=(id,fn)=>{const x=el.querySelector("#"+id);if(x)x.onchange=()=>{fn(x);save();renderAll();};};
+  bind("cfgK",x=>S.cfg.rrcK=x.value.trim()===""?null:Math.max(0.01,+x.value||1));
+  bind("cfgAdBase",x=>S.cfg.adBase=x.value);
+  bind("cfgVat",x=>S.cfg.vatCost=x.checked);
+  bind("cfgMkt",x=>S.cfg.skipMktBonus=x.checked);
+  bind("cfgTax",x=>S.cfg.taxRate=Math.max(0,+x.value||0));
+  bind("cfgLo",x=>S.cfg.drrLo=+x.value||7);
+  bind("cfgHi",x=>S.cfg.drrHi=+x.value||15);
+  el.querySelector("#clrData").onclick=()=>{if(confirm("Удалить все загруженные отчёты? Планы и ручная себестоимость сохранятся."))
+    {S.periods={};S.pricat={};S.costFile={};S.mkt=null;S.bonus={};S.viSell=null;S.viStock=[];S.matrix={};S.cur=null;save();renderAll();}};
+  el.querySelector("#clrCost").onclick=()=>{if(confirm("Удалить всю введённую вручную себестоимость?")){S.manualCost={};save();renderAll();}};
+  el.querySelector("#clrSnap").onclick=()=>{if(confirm("Удалить историю срезов?")){S.snaps=[];save();renderAll();}};
+  el.querySelector("#clrAll").onclick=()=>{if(confirm("Очистить всё, включая планы и настройки?"))
+    {Object.values(LS).forEach(k=>localStorage.removeItem(k));location.reload();}};
+}
+const statusTag=(ok,txt)=>ok?`<span class="tag ok">загружено</span> <span class="xs mut3">${esc(txt)}</span>`
+  :'<span class="tag n">нет</span>';
+
+function emptyState(){
+  return `<div class="card"><h3>Данные не загружены</h3>
+    <p class="hint">Дашборд ничего не показывает, пока нет отчётов — нули вместо реальных цифр вводили бы в заблуждение.</p>
+    <div class="drop" onclick="document.getElementById('fileIn').click()">
+      Загрузить отчёты<br><span class="small mut3">отчёты 1С по месяцам · себестоимость · PRICAT с остатками · маркетинговый план · бонусы · книга ВИ</span></div>
+  </div>`;
+}
+
+/* ================================================================================
+   БЛОК 10. ОЧИСТКА И ПЕРЕНОС СОСТОЯНИЯ
+   ================================================================================ */
+function clearDialog(){
+  const pk=Object.keys(S.periods).sort();
+  modal(`<h3>Что очистить?</h3>
+    <p class="hint">Действие необратимо. Планы, ручная себестоимость и срезы хранятся отдельно от отчётов,
+      поэтому их можно оставить или удалить независимо.</p>
+
+    ${pk.length?`<div style="margin-bottom:16px">
+      <div class="small mut" style="margin-bottom:7px">Отдельный месяц</div>
+      <div class="chips">${pk.map(k=>`<span class="chip" data-clrmon="${esc(k)}">
+        Очистить ${esc(S.periods[k].label.toLowerCase())} · ${short(sumRev(S.periods[k]))}</span>`).join("")}</div>
+    </div>`:`<div class="empty" style="margin-bottom:16px">Отчёты о продажах не загружены</div>`}
+
+    <div class="small mut" style="margin-bottom:7px">Целиком</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn" data-clr="periods">Очистить все периоды продаж<span class="mut small"> — ${pk.length} ${plur(pk.length,"месяц","месяца","месяцев")}, ${short(pk.reduce((a,k)=>a+sumRev(S.periods[k]),0))}</span></button>
+      <button class="btn" data-clr="refs">Очистить справочники<span class="mut small"> — себестоимость, PRICAT, матрица, маркетинговый план, бонусы, план оборота</span></button>
+      <button class="btn" data-clr="snaps">Очистить срезы<span class="mut small"> — ${S.snaps.length} ${plur(S.snaps.length,"срез","среза","срезов")}</span></button>
+      <button class="btn" data-clr="manual">Очистить ручную себестоимость и планы<span class="mut small"> — ${Object.keys(S.manualCost).length} значений</span></button>
+      <button class="btn" data-clr="all" style="border-color:var(--bad);color:var(--bad)">Очистить всё, включая настройки</button>
+      <button class="btn ghost" data-clr="cancel">Отмена</button>
+    </div>`,
+  host=>{
+    host.querySelectorAll("[data-clrmon]").forEach(b=>b.onclick=()=>{
+      const k=b.dataset.clrmon,lab=S.periods[k].label;
+      delete S.periods[k];
+      if(S.cur===k)S.cur=null;
+      closeModal();finishLoad();toast("Период «"+esc(lab)+"» удалён","ok");});
+    host.querySelectorAll("[data-clr]").forEach(b=>b.onclick=()=>{
+      const a=b.dataset.clr;
+      if(a==="cancel")return closeModal();
+      if(!confirm("Подтвердите: "+b.textContent.split("—")[0].trim()))return;
+      if(a==="periods"){S.periods={};S.cur=null;}
+      if(a==="refs"){S.pricat={};S.costFile={};S.matrixSets={};S.matrix={};S.mkt=null;
+        S.bonus={};S.viSell=null;S.viStock=[];S.planFile=null;S.cfg.matrixActive=null;}
+      if(a==="snaps")S.snaps=[];
+      if(a==="manual"){S.manualCost={};S.plan={};}
+      if(a==="all"){Object.values(LS).forEach(k=>localStorage.removeItem(k));location.reload();return;}
+      closeModal();finishLoad();});
+  });
+}
+
+function stateDialog(){
+  const pk=Object.keys(S.periods).length;
+  let size="—";
+  try{size=(JSON.stringify(packState()).length/1048576).toFixed(2)+" МБ";}catch(e){}
+  modal(`<h3>Перенос состояния</h3>
+    <p class="hint">Дашборд хранит данные в памяти самого браузера (localStorage). Это хранилище привязано
+      к конкретному браузеру на конкретном компьютере: другой браузер, другой профиль или режим инкогнито
+      увидят пустой дашборд, даже если открыть тот же файл. Сервера у дашборда нет, поэтому единственный
+      способ перенести данные — файл состояния.</p>
+    <div class="tw" style="margin-bottom:16px"><table><tbody>
+      <tr><td>Периодов продаж</td><td class="num">${pk}</td></tr>
+      <tr><td>Сохранённых срезов</td><td class="num">${S.snaps.length}</td></tr>
+      <tr><td>Ручная себестоимость</td><td class="num">${Object.keys(S.manualCost).length} значений</td></tr>
+      <tr><td>Объём состояния</td><td class="num">${size}</td></tr>
+      <tr><td>Последнее сохранение в браузер</td><td>${LAST_SAVE_OK
+        ?'<span class="tag ok">успешно</span>':'<span class="tag bad">не удалось</span>'}</td></tr>
+    </tbody></table></div>
+    <h3 style="margin-top:22px">Синхронизация между браузерами</h3>
+    <p class="hint">Состояние сохраняется в ваш репозиторий на GitHub. Любой браузер, где введён тот же токен,
+      подтянет последнюю версию: срезы, отчёты, планы и настройки.</p>
+
+    <div class="chips" style="margin-bottom:12px">
+      <span class="chip${SY.mode==="repo"?" on":""}" data-symode="repo">Файл в репозитории</span>
+      <span class="chip${SY.mode==="gist"?" on":""}" data-symode="gist">Приватный gist</span>
+    </div>
+
+    ${SY.mode==="gist"?`<div class="ins warn" style="margin-bottom:12px"><span class="ic">⚠</span><div>
+      Gists работают только с <b>classic</b>-токеном. Fine-grained токен, даже с правом «Gists»,
+      получает от GitHub 403 — это известное ограничение самой платформы, а не настройка.
+      Если у вас fine-grained токен, выберите «Файл в репозитории».</div></div>`
+    :`<div class="ins info" style="margin-bottom:12px"><span class="ic">i</span><div>
+      Нужен fine-grained токен с правом <b>Contents: Read and write</b> на указанный репозиторий
+      (Metadata: Read-only GitHub добавляет сам). Больше ничего не требуется.</div></div>`}
+
+    <div style="margin-bottom:12px">
+      <div class="lab small mut">Токен GitHub</div>
+      <input class="inp" type="password" id="syToken" value="${esc(SY.token)}" placeholder="github_pat_… или ghp_…">
+      ${SY.mode==="repo"?`
+        <div class="lab small mut" style="margin-top:10px">Владелец (пользователь или организация)</div>
+        <input class="inp" id="syOwner" value="${esc(SY.owner)}" placeholder="juliyashakhmetova-cmd">
+        <div class="lab small mut" style="margin-top:10px">Репозиторий</div>
+        <input class="inp" id="syRepo" value="${esc(SY.repo)}" placeholder="Vseinstrumenti-Dashboard">
+        <div class="lab small mut" style="margin-top:10px">Путь к файлу состояния</div>
+        <input class="inp" id="syPath" value="${esc(SY.path)}" placeholder="dashboard-state.json">
+        <div class="lab small mut" style="margin-top:10px">Ветка <span class="mut3">(пусто — ветка по умолчанию)</span></div>
+        <input class="inp" id="syBranch" value="${esc(SY.branch)}" placeholder="main">
+        <div class="ins warn" style="margin-top:10px"><span class="ic">⚠</span><div>
+          Если репозиторий <b>публичный</b>, файл состояния тоже будет виден всем — а в нём лежат
+          выручка, себестоимость и остатки. Для рабочих данных заведите отдельный <b>приватный</b>
+          репозиторий и укажите его здесь: страница может оставаться публичной, состояние — нет.</div></div>
+      ` : `
+        <div class="lab small mut" style="margin-top:10px">Хранилище (gist)</div>
+        <input class="inp" id="syGist" value="${esc(SY.gistId)}" placeholder="создастся автоматически при первой отправке">
+      `}
+      <label class="ci" style="margin-top:10px"><input type="checkbox" id="syOn" ${SY.on?"checked":""}>
+        <span>Синхронизировать автоматически
+        <div class="xs mut3">Отправка через 4 секунды после изменений, загрузка — при открытии страницы.</div></span></label>
+      ${SY.err?`<div class="ins bad" style="margin-top:8px"><span class="ic">⚠</span><div>${esc(SY.err)}</div></div>`:""}
+      ${SY.last?`<p class="hint">Последняя синхронизация: ${esc(new Date(SY.last).toLocaleString("ru-RU"))}</p>`:""}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn primary" data-st="push">Отправить в облако сейчас</button>
+      <button class="btn" data-st="pull">Загрузить из облака<span class="mut small"> — заменит текущие данные</span></button>
+      ${SY.mode==="gist"?`<button class="btn ghost" data-st="newgist">Создать новое хранилище</button>`:""}
+      <div style="height:8px"></div>
+      <button class="btn" data-st="export">Выгрузить в файл</button>
+      <button class="btn" data-st="import">Загрузить из файла<span class="mut small"> — заменит текущие данные</span></button>
+      <button class="btn ghost" data-st="cancel">Закрыть</button>
+    </div>`,
+  host=>{
+    const $=id=>host.querySelector("#"+id);
+    const grab=()=>{
+      SY.token=($("syToken")||{}).value?$("syToken").value.trim():SY.token;
+      if($("syOwner"))SY.owner=$("syOwner").value.trim();
+      if($("syRepo"))SY.repo=$("syRepo").value.trim();
+      if($("syPath"))SY.path=$("syPath").value.trim()||"dashboard-state.json";
+      if($("syBranch"))SY.branch=$("syBranch").value.trim();
+      if($("syGist"))SY.gistId=$("syGist").value.trim();
+      if($("syOn"))SY.on=$("syOn").checked;
+      saveSync();renderSyncBadge();
+    };
+    ["syToken","syOwner","syRepo","syPath","syBranch","syGist"].forEach(id=>{
+      const e=$(id); if(e)e.onchange=grab;});
+    if($("syOn"))$("syOn").onchange=()=>{grab();if(SY.on&&!syncReady())pushCloud().catch(()=>{});};
+    host.querySelectorAll("[data-symode]").forEach(c=>c.onclick=()=>{
+      grab();SY.mode=c.dataset.symode;SY.err="";saveSync();closeModal();stateDialog();});
+    host.querySelectorAll("[data-st]").forEach(b=>b.onclick=async()=>{
+      const a=b.dataset.st;grab();
+      if(a==="cancel")return closeModal();
+      if(a==="export"){closeModal();return exportState();}
+      if(a==="import"){closeModal();return document.getElementById("stateIn").click();}
+      if(a==="newgist"){SY.gistId="";saveSync();}
+      const bad=syncReady();
+      if(bad){toast("Синхронизация не настроена: "+esc(bad),"err");return;}
+      b.disabled=true;
+      try{
+        if(a==="pull"){
+          await pullCloud(false);
+          closeModal();finishLoad();
+          toast("Загружено из облака: периодов <b>"+Object.keys(S.periods).length+"</b>, срезов <b>"+S.snaps.length+"</b>","ok");
+        }else{await pushCloud(false);closeModal();stateDialog();}
+      }catch(e){closeModal();stateDialog();}
+    });
+  });
+}
+
+/* ================================================================================
+   БЛОК 9. ГЛАВНЫЙ РЕНДЕР И ИНИЦИАЛИЗАЦИЯ
+   ================================================================================ */
+let CUR_M=null;
+function renderAll(){
+  const M=compute();CUR_M=M;
+  renderPeriodSel();
+  renderKpis(M);
+  renderOverview(M);renderPlanFact(M);renderUnit(M);renderProducts(M);renderAds(M);renderStock(M);renderMatrix(M);renderData(M);
+  const cnts={pr:M.ok?M.items.length:0,st:M.ok?M.crit.length+M.warnSt.length:0,ue:M.ok?M.cov.cntNone:0,
+    mx:Object.keys(S.matrixSets||{}).length};
+  document.querySelectorAll("#tabs button").forEach(b=>{
+    const c=cnts[b.dataset.t];
+    b.innerHTML=b.textContent.replace(/\s*\d+$/,"").trim();
+    if(c)b.innerHTML+=`<span class="cnt">${c}</span>`;
+  });
+  document.querySelectorAll("main .tab").forEach(s=>s.classList.remove("on"));
+  const act=document.getElementById("tab-"+S.ui.tab);if(act)act.classList.add("on");
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===S.ui.tab));
+  bindTables(document);bindTools(document);
+  document.querySelectorAll("[data-cnt]").forEach(e=>{
+    const id=e.dataset.cnt;const src=id==="ue"?(M.items||[]).filter(t=>t.uc!=null):id==="st"?(M.items||[]).filter(t=>t.stock!=null):(M.items||[]);
+    e.textContent="Показано: "+filterRows(src,id).length+" из "+src.length;});
+  document.getElementById("btnSnap").disabled=!M.ok;
+  renderStorageWarn();
+}
+/* Постоянная плашка о состоянии хранилища: если браузер не сохраняет данные,
+   человек должен узнать об этом сразу, а не после закрытия вкладки. */
+function renderStorageWarn(){
+  const el=document.getElementById("storageWarn");
+  if(STORAGE_OK&&LAST_SAVE_OK){el.innerHTML="";return;}
+  el.innerHTML=`<div style="margin:0 20px;margin-top:14px" class="card" style="border-color:var(--bad)">
+    <div class="ins bad" style="margin:0"><span class="ic">⚠</span><div>
+      ${!STORAGE_OK
+        ? `<b>Браузер запрещает этой странице сохранять данные</b> (${esc(STORAGE_ERR)}).
+           Всё, что вы загрузите, исчезнет при закрытии вкладки. Обычно так ведёт себя режим инкогнито
+           или Safari при открытии файла с диска. Откройте файл в Chrome или Firefox в обычном окне,
+           либо пользуйтесь кнопкой «Состояние → Выгрузить в файл» перед закрытием.`
+        : `<b>Последнее сохранение не прошло полностью.</b> Отчёты могли не поместиться в память браузера.
+           Удалите лишние периоды кнопкой «Очистить» или выгрузите состояние в файл кнопкой «Состояние».`}
+    </div></div></div>`;
+}
+function renderPeriodSel(){
+  const sel=document.getElementById("periodSel");
+  const keys=Object.keys(S.periods).sort();
+  if(!keys.length){sel.innerHTML='<option>Нет данных</option>';sel.disabled=true;return;}
+  sel.disabled=false;
+  sel.innerHTML=keys.map(k=>`<option value="${k}"${S.cur===k?" selected":""}>${esc(S.periods[k].label)}</option>`).join("")
+    +`<option value="ALL"${S.cur==="ALL"?" selected":""}>— Все периоды (${keys.length}) —</option>`;
+}
+
+function init(){
+  load();
+  loadSync();
+  pickActiveMatrix();   // активный набор матрицы восстанавливается из matrixSets, отдельно он не хранится
+  document.getElementById("btnUp").onclick=()=>document.getElementById("fileIn").click();
+  document.getElementById("fileIn").onchange=e=>{handleFiles(e.target.files);e.target.value="";};
+  document.getElementById("periodSel").onchange=e=>{S.cur=e.target.value;save();renderAll();};
+  document.getElementById("tabs").onclick=e=>{
+    const b=e.target.closest("button");if(!b)return;S.ui.tab=b.dataset.t;save();renderAll();
+    window.scrollTo({top:0,behavior:"smooth"});};
+  document.getElementById("btnClear").onclick=clearDialog;
+  document.getElementById("btnState").onclick=stateDialog;
+  document.getElementById("stateIn").onchange=e=>{
+    if(e.target.files[0])importState(e.target.files[0]);e.target.value="";};
+  document.getElementById("btnSnap").onclick=()=>{
+    const M=CUR_M;if(!M||!M.ok)return;
+    S.snaps.push({label:M.label,ts:new Date().toLocaleString("ru-RU",{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"}),
+      revenue:M.revenue,net:M.net,margin:M.margin,drr:M.drr,cogs:M.cogs,ad:M.adV});
+    save();renderAll();toast("Срез сохранён. Точек в тренде: <b>"+S.snaps.length+"</b>","ok");};
+  // глобальная защита от «молчаливых» падений
+  window.addEventListener("error",e=>{
+    console.error(e.error||e.message);
+    toast("Внутренняя ошибка: "+esc(String(e.message||"")).slice(0,180)+"<br><span class='xs mut'>Данные не потеряны. Подробности — в консоли браузера (F12).</span>","err",10000);});
+  ["dragover","drop"].forEach(k=>document.addEventListener(k,e=>e.preventDefault()));
+  document.addEventListener("drop",e=>{if(e.dataTransfer&&e.dataTransfer.files.length)handleFiles(e.dataTransfer.files);});
+  renderAll();
+  if(!Object.keys(S.periods).length&&!SY.on){S.ui.tab="dt";renderAll();}
+  /* Если синхронизация включена — подтягиваем облачную версию, но только если она свежее локальной:
+     иначе открытая в другом окне вкладка затёрла бы более новые изменения. */
+  if(SY.on&&!syncReady()&&(SY.mode==="repo"||SY.gistId)){
+    renderSyncBadge();
+    pullCloud(true).then(snap=>{
+      if(!snap)return;
+      finishLoad();
+      toast("Загружены данные из облака (сохранены "+new Date(snap.saved).toLocaleString("ru-RU")+")","ok",6000);
+    }).catch(()=>{renderAll();});
+  }
+}
+if(typeof XLSX==="undefined"){
+  document.body.insertAdjacentHTML("afterbegin",
+    '<div style="padding:20px;background:#3a1d1d;color:#ffb4b0">Не удалось загрузить SheetJS с cdnjs. Проверьте соединение — без библиотеки чтение .xlsx невозможно.</div>');
+}else init();
+</script>
+</body>
+</html>
